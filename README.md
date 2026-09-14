@@ -1,0 +1,5 @@
+# keyevent.nvim
+
+## License
+
+MIT
