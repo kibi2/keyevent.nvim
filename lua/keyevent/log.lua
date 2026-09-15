@@ -2,7 +2,7 @@ local api = vim.api -- Neovim
 local bo = vim.bo
 local fn = vim.fn
 
-local notify = require("rush./notify")
+local notify = require("keyevent/notify")
 local config = {
 	log = {
 		level = vim.log.levels.DEBUG,

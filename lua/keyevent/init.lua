@@ -1,10 +1,11 @@
 local diagnosis = require("keyevent.diagnosis")
+local KeyEvent = require("keyevent.keyevent")
 
 local M = {}
 
 ---@param opts? table
 function M.setup(opts)
-	-- setup_config(opts or {})
+	KeyEvent.setup(opts or {})
 	vim.api.nvim_create_user_command("KeyEvent", function(opts)
 		if opts.args == "diagnosis" then
 			diagnosis.start()

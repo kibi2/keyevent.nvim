@@ -6,19 +6,39 @@ local M = {}
 -- default interval (ms)
 --------------------------------------------------
 
-local interval = {
-    rep1 = 78,
-    rep2 = 91,
-    hold1 = 490,
-    hold2 = 510,
-    tap = 1000,
+local config
+
+local default_config = {
+    interval = {
+        rep1 = 78,
+        rep2 = 91,
+        hold1 = 490,
+        hold2 = 510,
+        tap = 1000,
+    }
 }
 
----@alias KeyEventType
----| "click"
----| "tap"
----| "repeat"
----| "hold_end"
+---@enum KeyEventSource
+local KEY_EVENT_SOURCE = {
+    UNDEFINED = "undefined",
+    ON_KEY = "on_key",
+    KEYMAP = "keymap",
+}
+
+---@enum KeyEventType
+local KEY_EVENT = {
+    CLICK = "click",
+    TAP = "tap",
+    REPEAT = "repeat",
+}
+
+---@enum RawEvent
+local RAW_EVENT = {
+    CLICK = "click",
+    TAP = "tap",
+    HOLD_START = "hold_start",
+    HOLD_REPEAT = "hold_repeat",
+}
 
 ---@class KeyEvent
 ---@field source KeyEventSource
@@ -32,17 +52,14 @@ local interval = {
 ---@field nr integer
 ---@field hold_start integer
 
----@alias KeyEventSource
----| "on_key"
----| "keymap"
-
+---@return integer
 local function get_time()
     return math.floor(vim.loop.hrtime() / 1e6)
 end
 
 local default_event = {
-    source = "",
-    type = "click",
+    source = KEY_EVENT_SOURCE.UNDEFINED,
+    type = KEY_EVENT.CLICK,
     key = "",
     prev_key = "",
     time = get_time(),
@@ -52,32 +69,47 @@ local default_event = {
     nr = 0,
     hold_start = 0,
 }
+---@type KeyEvent
 local prev_event = vim.deepcopy(default_event)
 
 ---@param event KeyEvent
-local function set_event_type(event)
+---@return RawEvent
+local function get_raw_event(event, interval)
     if event.key ~= event.prev_key then
-        event.type = "click"
+        return RAW_EVENT.CLICK
+    elseif interval.hold1 <= event.interval and event.interval <= interval.hold2 then
+        return RAW_EVENT.HOLD_START
+    elseif interval.rep1 <= event.interval and event.interval <= interval.rep2 and event.nr >= 2 then
+        return RAW_EVENT.HOLD_REPEAT
+    elseif event.interval <= interval.tap then
+        return RAW_EVENT.TAP
+    else
+        return RAW_EVENT.CLICK
+    end
+end
+
+---@param event KeyEvent
+local function set_event_type(event)
+    local raw_event = get_raw_event(event, config.interval)
+    if raw_event == RAW_EVENT.CLICK then
+        event.type = KEY_EVENT.CLICK
         event.nt = 1
         event.nr = 0
         event.vim_count = vim.v.count
-    elseif interval.hold1 <= event.interval and event.interval <= interval.hold2 then
-        event.type = "repeat"
+    elseif raw_event == RAW_EVENT.HOLD_START then
+        event.type = KEY_EVENT.REPEAT
         event.nr = 2
         event.hold_start = prev_event.time
-    elseif interval.rep1 <= event.interval and event.interval <= interval.rep2 and event.nr >= 2 then
-        event.type = "repeat"
+    elseif raw_event == RAW_EVENT.HOLD_REPEAT then
+        event.type = KEY_EVENT.REPEAT
         event.nr = event.nr + 1
-    elseif event.interval <= interval.tap then
-        event.type = "tap"
+    elseif raw_event == RAW_EVENT.TAP then
+        event.type = KEY_EVENT.TAP
         event.nt = event.nt + 1
         event.nr = 0
         event.vim_count = vim.v.count
     else
-        event.type = "click"
-        event.nt = 1
-        event.nr = 0
-        event.vim_count = vim.v.count
+        assert(false, "")
     end
 end
 
@@ -107,15 +139,34 @@ local function get_event(source, typed)
 end
 
 ---@param typed string
----@return KeyEvent
-function M.on_key_event(typed)
-    return get_event("on_key", typed)
+local function on_key_event(typed)
+    if prev_event.source == KEY_EVENT_SOURCE.KEYMAP and typed == prev_event.key then
+        return
+    end
+    get_event(KEY_EVENT_SOURCE.ON_KEY, typed)
+end
+
+---@param typed string
+local function on_key(_, typed)
+    if #typed == 0 then
+        return
+    end
+    on_key_event(typed)
+end
+
+
+---@param opts? table
+function M.setup(opts)
+    config =
+        vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
 end
 
 ---@param typed string
 ---@return KeyEvent
 function M.keymap_event(typed)
-    return get_event("keymap", typed)
+    return get_event(KEY_EVENT_SOURCE.KEYMAP, typed)
 end
+
+vim.on_key(on_key)
 
 return M
