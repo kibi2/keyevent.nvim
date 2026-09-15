@@ -1,4 +1,4 @@
-local diagnosis = require("keyboard.diagnosis")
+local diagnosis = require("keyevent.diagnosis")
 
 local M = {}
 

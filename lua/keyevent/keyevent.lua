@@ -1,3 +1,5 @@
+local log = require("keyevent.log")
+
 local M = {}
 
 --------------------------------------------------
@@ -5,8 +7,8 @@ local M = {}
 --------------------------------------------------
 
 local interval = {
-    rep1 = 140,
-    rep2 = 150,
+    rep1 = 78,
+    rep2 = 91,
     hold1 = 490,
     hold2 = 510,
     tap = 1000,
@@ -54,20 +56,21 @@ local prev_event = vim.deepcopy(default_event)
 
 ---@param event KeyEvent
 local function set_event_type(event)
-    if interval.rep1 <= event.interval and event.interval <= interval.rep2 and event.nr >= 2 then
-        event.type = "repeat"
-        event.nr = event.nr + 1
+    if event.key ~= event.prev_key then
+        event.type = "click"
+        event.nt = 1
+        event.nr = 0
+        event.vim_count = vim.v.count
     elseif interval.hold1 <= event.interval and event.interval <= interval.hold2 then
         event.type = "repeat"
         event.nr = 2
         event.hold_start = prev_event.time
+    elseif interval.rep1 <= event.interval and event.interval <= interval.rep2 and event.nr >= 2 then
+        event.type = "repeat"
+        event.nr = event.nr + 1
     elseif event.interval <= interval.tap then
         event.type = "tap"
-        if event.key == event.prev_key then
-            event.nt = event.nt + 1
-        else
-            event.nt = 1
-        end
+        event.nt = event.nt + 1
         event.nr = 0
         event.vim_count = vim.v.count
     else
@@ -90,6 +93,16 @@ local function get_event(source, typed)
     event.interval = event.time - prev_event.time
     set_event_type(event)
     prev_event = vim.deepcopy(event)
+    log.debug(
+        "%s\t%s\t:(%s) %d, [%d %d]\t[%d]",
+        event.source,
+        event.type,
+        event.key,
+        event.vim_count,
+        event.nt,
+        event.nr,
+        event.interval
+    )
     return event
 end
 

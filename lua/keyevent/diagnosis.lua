@@ -153,7 +153,9 @@ local function make_lines()
 	local lines = {
 		"===== Rush diagnosis =====",
 		"",
-		"Press and hold a key several times.",
+		"Press and hold one of these keys:",
+		"  'h', 'j', 'k', or 'l'",
+		"Repeat the measurement several times.",
 		"",
 		"Use a different key for each measurement.",
 		"For example:",
@@ -301,7 +303,7 @@ local function create_window()
 	vim.bo[buf].swapfile = false
 	vim.bo[buf].modifiable = false
 	local width = 64
-	local height = 30
+	local height = 32
 	local ui = vim.api.nvim_list_uis()[1]
 	local row = math.floor((ui.height - height) / 2)
 	local col = math.floor((ui.width - width) / 2)
