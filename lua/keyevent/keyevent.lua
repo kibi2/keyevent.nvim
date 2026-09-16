@@ -1,3 +1,4 @@
+local threshold = require("keyevent.threshold")
 local log = require("keyevent.log")
 
 local M = {}
@@ -5,18 +6,6 @@ local M = {}
 --------------------------------------------------
 -- default interval (ms)
 --------------------------------------------------
-
-local config
-
-local default_config = {
-    interval = {
-        rep1 = 78,
-        rep2 = 91,
-        hold1 = 490,
-        hold2 = 510,
-        tap = 1000,
-    }
-}
 
 ---@enum KeyEventSource
 local KEY_EVENT_SOURCE = {
@@ -74,14 +63,14 @@ local prev_event = vim.deepcopy(default_event)
 
 ---@param event KeyEvent
 ---@return RawEvent
-local function get_raw_event(event, interval)
+local function get_raw_event(event)
     if event.key ~= event.prev_key then
         return RAW_EVENT.CLICK
-    elseif interval.hold1 <= event.interval and event.interval <= interval.hold2 then
+    elseif threshold.is_delay(event.interval) then
         return RAW_EVENT.HOLD_START
-    elseif interval.rep1 <= event.interval and event.interval <= interval.rep2 and event.nr >= 2 then
+    elseif threshold.is_interval(event.interval) and event.nr >= 2 then
         return RAW_EVENT.HOLD_REPEAT
-    elseif event.interval <= interval.tap then
+    elseif threshold.is_tap(event.interval) then
         return RAW_EVENT.TAP
     else
         return RAW_EVENT.CLICK
@@ -90,7 +79,7 @@ end
 
 ---@param event KeyEvent
 local function set_event_type(event)
-    local raw_event = get_raw_event(event, config.interval)
+    local raw_event = get_raw_event(event)
     if raw_event == RAW_EVENT.CLICK then
         event.type = KEY_EVENT.CLICK
         event.nt = 1
@@ -152,13 +141,6 @@ local function on_key(_, typed)
         return
     end
     on_key_event(typed)
-end
-
-
----@param opts? table
-function M.setup(opts)
-    config =
-        vim.tbl_deep_extend("force", vim.deepcopy(default_config), opts or {})
 end
 
 ---@param typed string
