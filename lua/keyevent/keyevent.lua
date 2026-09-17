@@ -5,7 +5,6 @@ local M = {}
 
 ---@enum KeyEventSource
 M.KEY_EVENT_SOURCE = {
-	UNDEFINED = "undefined",
 	ON_KEY = "on_key",
 	KEYMAP = "keymap",
 }
@@ -41,8 +40,8 @@ local function get_time()
 end
 
 ---@type KeyEvent
-local default_event = {
-	source = M.KEY_EVENT_SOURCE.UNDEFINED,
+local start_event = {
+	source = M.KEY_EVENT_SOURCE.ON_KEY,
 	type = M.KEY_EVENT.CLICK,
 	ng_repeat = false,
 	key = "",
@@ -54,7 +53,7 @@ local default_event = {
 	hold_start = 0,
 }
 ---@type KeyEvent
-local prev_event = vim.deepcopy(default_event)
+local prev_event = vim.deepcopy(start_event)
 ---@type KeyEventState
 local state = STATE.NO_HOLD
 
@@ -66,10 +65,12 @@ local function process_no_hold(event)
 		event.type = M.KEY_EVENT.CLICK
 	end
 	event.ng_repeat = threshold.is_repeat(event.interval)
-	if M.is_same_key(event) and event.type == M.KEY_EVENT.TAP then
+	if prev_event.type == M.KEY_EVENT.REPEAT then
+		event.nt = 1
+	elseif M.is_same_key(event) and event.type == M.KEY_EVENT.TAP then
 		event.nt = event.nt + 1
 	else
-		event.nt = 0
+		event.nt = 1
 	end
 	event.nr = 0
 	event.hold_start = 0
@@ -123,9 +124,33 @@ local function get_event(source, typed)
 	return event
 end
 
+---@param typed string
+local function on_key_event(typed)
+	if
+		prev_event.source == M.KEY_EVENT_SOURCE.KEYMAP
+		and typed == prev_event.key
+	then
+		return
+	end
+	if get_time() - prev_event.time <= 10 then
+		return
+	end
+	local event = get_event(M.KEY_EVENT_SOURCE.ON_KEY, typed)
+	prev_event = vim.deepcopy(event)
+end
+
+---@param typed string
+local function on_key(_, typed)
+	if #typed == 0 then
+		return
+	end
+	on_key_event(typed)
+end
+
 ---@param event KeyEvent
-local function debug_event(event)
-	log.debug(
+---@return string
+function M.to_string(event)
+	return string.format(
 		"%s\t%s\t:(%s, %s), [%d %d]\t%s [%d, %d]",
 		event.source,
 		event.type,
@@ -140,35 +165,10 @@ local function debug_event(event)
 end
 
 ---@param typed string
-local function on_key_event(typed)
-	if
-		prev_event.source == M.KEY_EVENT_SOURCE.KEYMAP
-		and typed == prev_event.key
-	then
-		return
-	end
-	local event = get_event(M.KEY_EVENT_SOURCE.ON_KEY, typed)
-	if event.interval <= 10 then
-		return
-	end
-	prev_event = vim.deepcopy(event)
-	debug_event(event)
-end
-
----@param typed string
-local function on_key(_, typed)
-	if #typed == 0 then
-		return
-	end
-	on_key_event(typed)
-end
-
----@param typed string
 ---@return KeyEvent
 function M.keymap_event(typed)
 	local event = get_event(M.KEY_EVENT_SOURCE.KEYMAP, typed)
 	prev_event = vim.deepcopy(event)
-	debug_event(event)
 	return event
 end
 

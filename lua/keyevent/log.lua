@@ -9,10 +9,10 @@ local config = {
 		output = "buffer", -- "buffer", "file", "print", "notify"
 		buffer_name = "rush://log",
 		file_name = "/tmp/rush.log",
-		use_timestamp = true,
+		use_timestamp = false,
 		single_line = true,
 		probe = true,
-		monitor = true,
+		monitor = false,
 	},
 }
 

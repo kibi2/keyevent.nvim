@@ -5,7 +5,7 @@ local default_config = {
         delta = 10,
         interval = 83,
         delay = 500,
-        tap = 300,
+        tap = 500,
     }
 }
 
