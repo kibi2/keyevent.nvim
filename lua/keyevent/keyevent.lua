@@ -28,6 +28,7 @@ local STATE = {
 ---@field ng_repeat boolean
 ---@field key string
 ---@field prev_key string
+---@field meta_key string
 ---@field time integer
 ---@field interval integer
 ---@field nt integer
@@ -46,6 +47,7 @@ local start_event = {
 	ng_repeat = false,
 	key = "",
 	prev_key = "",
+	meta_key = "",
 	time = get_time(),
 	interval = 0,
 	nt = 0,
@@ -110,6 +112,26 @@ local function process_event(event)
 	end
 end
 
+---@param key string
+---@return string
+local function get_prime_key(key)
+	if key:sub(-1) == ">" then
+		return key:sub(-2, -2)
+	else
+		return key
+	end
+end
+
+---@param key string
+---@return string
+local function get_meta_key(key)
+	if key:sub(1, 1) == "<" then
+		return key:sub(2, 2)
+	else
+		return ""
+	end
+end
+
 ---@param source KeyEventSource
 ---@param typed string
 ---@return KeyEvent
@@ -118,6 +140,7 @@ local function get_event(source, typed)
 	event.source = source
 	event.key = typed
 	event.prev_key = prev_event.key
+	event.meta_key = get_meta_key(typed)
 	event.time = get_time()
 	event.interval = event.time - prev_event.time
 	process_event(event)
@@ -151,11 +174,12 @@ end
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s\t%s\t:(%s, %s), [%d %d]\t%s [%d, %d]",
+		"%s\t%s\t:(%s, %s%s), [%d %d]\t%s [%d, %d]",
 		event.source,
 		event.type,
 		event.prev_key,
-		event.key,
+		#event.meta_key == 0 and "" or (event.meta_key .. "-"),
+		get_prime_key(event.key),
 		event.nt,
 		event.nr,
 		event.ng_repeat and "NG" or "",
@@ -175,7 +199,7 @@ end
 ---@param event KeyEvent
 ---@return boolean
 function M.is_same_key(event)
-	return event.key == event.prev_key
+	return get_prime_key(event.key) == get_prime_key(event.prev_key)
 end
 
 ---@param event KeyEvent
