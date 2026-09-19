@@ -17,7 +17,7 @@ M.KEY_EVENT_META_MASK = {
 ---@type {integer:string}
 M.KEY_EVENT_META_CHAR = {}
 for key, mask in pairs(M.KEY_EVENT_META_MASK) do
-	M.KEY_EVENT_META_CHAR[mask] =key
+	M.KEY_EVENT_META_CHAR[mask] = key
 end
 
 ---@enum KeyEventSource
@@ -35,8 +35,9 @@ M.KEY_EVENT_TYPE = {
 
 ---@enum KeyEventState
 local STATE = {
-	HOLD = "hold",
 	NORMAL = "normal",
+	HOLD = "hold",
+	REPEAT = "repeat",
 }
 
 ---@class KeyEvent
@@ -65,8 +66,8 @@ local start_event = {
 	ng_repeat = false,
 	key = "",
 	prev_key = "",
-	meta= 0,
-	prev_meta= 0,
+	meta = 0,
+	prev_meta = 0,
 	time = get_time(),
 	interval = 0,
 	nt = 0,
@@ -78,6 +79,39 @@ local prev_event = vim.deepcopy(start_event)
 ---@type KeyEventState
 local state = STATE.NORMAL
 
+-- EVENT:
+--  D:is different key
+--  H:is_hold, R: is_repeat, T:is_tap
+--  C:other
+--  | STATE | transition | stay |
+--  | NORMAL | H -> HOLD | TCD<br>R:NG |
+--  | HOLD | R -> REPEAT<br>TCD -> NORMAL | H |
+--  | REPEAT | TCD(H) -> NORMAL | R |
+---@param event KeyEvent
+local function transition(event)
+	if not M.is_same_key(event) then --  D:is different key
+		state = STATE.NORMAL
+		return
+	end
+	if state == STATE.NORMAL then
+		if threshold.is_hold(event.interval) then
+			state = STATE.HOLD
+		end
+	elseif state == STATE.HOLD then
+		if threshold.is_repeat(event.interval) then
+			state = STATE.REPEAT
+		elseif not threshold.is_hold(event.interval) then
+			state = STATE.NORMAL
+		end
+	elseif state == STATE.REPEAT then
+		if not threshold.is_repeat(event.interval) then
+			state = STATE.NORMAL
+		end
+	else
+		assert(false, state)
+	end
+end
+
 ---@param event KeyEvent
 local function process_normal(event)
 	if threshold.is_tap(event.interval) then
@@ -88,37 +122,30 @@ local function process_normal(event)
 	event.ng_repeat = threshold.is_repeat(event.interval)
 	if prev_event.type == M.KEY_EVENT_TYPE.REPEAT then
 		event.nt = 1
-	elseif M.is_same_key(event) and event.type == M.KEY_EVENT_TYPE.TAP then
+	elseif not M.is_same_key(event) then
+		event.nt = 1
+	elseif event.type == M.KEY_EVENT_TYPE.TAP then
 		event.nt = event.nt + 1
 	else
 		event.nt = 1
 	end
-	event.nr = 0
 	event.hold_start = 0
+	event.nr = 0
 end
 
 ---@param event KeyEvent
 local function process_hold(event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
 	event.ng_repeat = false
-	if event.nr == 0 then
-		event.hold_start = prev_event.time
-	end
-	event.nr = event.nr + 1
+	event.hold_start = prev_event.time
+	event.nr = 1
 end
 
-local function transition(event)
-	if state == STATE.NORMAL then
-		if M.is_same_key(event) and threshold.is_hold(event.interval) then
-			state = STATE.HOLD
-		end
-	else
-		if
-			not (M.is_same_key(event) and threshold.is_repeat(event.interval))
-		then
-			state = STATE.NORMAL
-		end
-	end
+---@param event KeyEvent
+local function process_repeat(event)
+	event.type = M.KEY_EVENT_TYPE.REPEAT
+	event.ng_repeat = false
+	event.nr = event.nr + 1
 end
 
 ---@param event KeyEvent
@@ -126,8 +153,10 @@ local function process_event(event)
 	transition(event)
 	if state == STATE.NORMAL then
 		process_normal(event)
-	else
+	elseif state == STATE.HOLD then
 		process_hold(event)
+	else
+		process_repeat(event)
 	end
 end
 
@@ -175,7 +204,7 @@ end
 ---@param key string
 ---@param meta integer
 ---@return string
-local function key_note (key, meta)
+local function key_note(key, meta)
 	local note = M.unparse(key, meta)
 	if not note then
 		return string.format("%d-%s", meta, key)
@@ -224,7 +253,7 @@ function M.parse(key_notation)
 		if not mask then
 			return key_notation, 0
 		end
-		meta = M.set_on(meta , mask)
+		meta = M.set_on(meta, mask)
 	end
 	-- The last part is the key.
 	-- The key itself is not interpreted as Shift.
@@ -244,7 +273,7 @@ function M.unparse(key, meta)
 	end
 	-- Uppercase key implies Shift.
 	if key:match("%u") then
-		meta = M.set_on(meta , META_MASK.S)
+		meta = M.set_on(meta, META_MASK.S)
 	end
 	key = key:lower()
 	local chars = {}
@@ -258,7 +287,7 @@ function M.unparse(key, meta)
 		META_MASK.T,
 	}
 	for _, mask in ipairs(masks) do
-		if M.is_on(meta , mask) then
+		if M.is_on(meta, mask) then
 			chars[#chars + 1] = M.KEY_EVENT_META_CHAR[mask]
 		end
 	end
