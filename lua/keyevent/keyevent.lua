@@ -1,7 +1,24 @@
+local bit = require("bit")
 local threshold = require("keyevent.threshold")
 local log = require("keyevent.log")
 
 local M = {}
+
+---@enum KeyEventMetaMask
+M.KEY_EVENT_META_MASK = {
+	S = 1, -- shift
+	C = 2, -- ctrl
+	A = 4, -- alt
+	M = 8, -- meta
+	D = 16, -- command / Super
+	T = 32, -- Meta（Altではない場合）
+}
+
+---@type {integer:string}
+M.KEY_EVENT_META_CHAR = {}
+for key, mask in pairs(M.KEY_EVENT_META_MASK) do
+	M.KEY_EVENT_META_CHAR[mask] =key
+end
 
 ---@enum KeyEventSource
 M.KEY_EVENT_SOURCE = {
@@ -10,7 +27,7 @@ M.KEY_EVENT_SOURCE = {
 }
 
 ---@enum KeyEventType
-M.KEY_EVENT = {
+M.KEY_EVENT_TYPE = {
 	CLICK = "click",
 	TAP = "tap",
 	REPEAT = "repeat",
@@ -19,7 +36,7 @@ M.KEY_EVENT = {
 ---@enum KeyEventState
 local STATE = {
 	HOLD = "hold",
-	NO_HOLD = "no_hold",
+	NORMAL = "normal",
 }
 
 ---@class KeyEvent
@@ -28,7 +45,8 @@ local STATE = {
 ---@field ng_repeat boolean
 ---@field key string
 ---@field prev_key string
----@field meta_key string
+---@field meta integer
+---@field prev_meta integer
 ---@field time integer
 ---@field interval integer
 ---@field nt integer
@@ -43,11 +61,12 @@ end
 ---@type KeyEvent
 local start_event = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
-	type = M.KEY_EVENT.CLICK,
+	type = M.KEY_EVENT_TYPE.CLICK,
 	ng_repeat = false,
 	key = "",
 	prev_key = "",
-	meta_key = "",
+	meta= 0,
+	prev_meta= 0,
 	time = get_time(),
 	interval = 0,
 	nt = 0,
@@ -57,19 +76,19 @@ local start_event = {
 ---@type KeyEvent
 local prev_event = vim.deepcopy(start_event)
 ---@type KeyEventState
-local state = STATE.NO_HOLD
+local state = STATE.NORMAL
 
 ---@param event KeyEvent
-local function process_no_hold(event)
+local function process_normal(event)
 	if threshold.is_tap(event.interval) then
-		event.type = M.KEY_EVENT.TAP
+		event.type = M.KEY_EVENT_TYPE.TAP
 	else
-		event.type = M.KEY_EVENT.CLICK
+		event.type = M.KEY_EVENT_TYPE.CLICK
 	end
 	event.ng_repeat = threshold.is_repeat(event.interval)
-	if prev_event.type == M.KEY_EVENT.REPEAT then
+	if prev_event.type == M.KEY_EVENT_TYPE.REPEAT then
 		event.nt = 1
-	elseif M.is_same_key(event) and event.type == M.KEY_EVENT.TAP then
+	elseif M.is_same_key(event) and event.type == M.KEY_EVENT_TYPE.TAP then
 		event.nt = event.nt + 1
 	else
 		event.nt = 1
@@ -80,7 +99,7 @@ end
 
 ---@param event KeyEvent
 local function process_hold(event)
-	event.type = M.KEY_EVENT.REPEAT
+	event.type = M.KEY_EVENT_TYPE.REPEAT
 	event.ng_repeat = false
 	if event.nr == 0 then
 		event.hold_start = prev_event.time
@@ -89,7 +108,7 @@ local function process_hold(event)
 end
 
 local function transition(event)
-	if state == STATE.NO_HOLD then
+	if state == STATE.NORMAL then
 		if M.is_same_key(event) and threshold.is_hold(event.interval) then
 			state = STATE.HOLD
 		end
@@ -97,7 +116,7 @@ local function transition(event)
 		if
 			not (M.is_same_key(event) and threshold.is_repeat(event.interval))
 		then
-			state = STATE.NO_HOLD
+			state = STATE.NORMAL
 		end
 	end
 end
@@ -105,45 +124,26 @@ end
 ---@param event KeyEvent
 local function process_event(event)
 	transition(event)
-	if state == STATE.NO_HOLD then
-		process_no_hold(event)
+	if state == STATE.NORMAL then
+		process_normal(event)
 	else
 		process_hold(event)
 	end
 end
 
----@param key string
----@return string
-local function get_prime_key(key)
-	if key:sub(-1) == ">" then
-		return key:sub(-2, -2)
-	else
-		return key
-	end
-end
-
----@param key string
----@return string
-local function get_meta_key(key)
-	if key:sub(1, 1) == "<" then
-		return key:sub(2, 2)
-	else
-		return ""
-	end
-end
-
 ---@param source KeyEventSource
----@param typed string
+---@param key_notation string
 ---@return KeyEvent
-local function get_event(source, typed)
+local function get_event(source, key_notation)
+	local key, meta = M.parse(key_notation)
 	local event = vim.deepcopy(prev_event)
 	event.source = source
-	event.key = typed
+	event.key = key
 	event.prev_key = prev_event.key
-	event.meta_key = get_meta_key(typed)
+	event.meta = meta
+	event.prev_meta = prev_event.meta
 	event.time = get_time()
 	event.interval = event.time - prev_event.time
-	process_event(event)
 	return event
 end
 
@@ -158,7 +158,9 @@ local function on_key_event(typed)
 	if get_time() - prev_event.time <= 10 then
 		return
 	end
-	local event = get_event(M.KEY_EVENT_SOURCE.ON_KEY, typed)
+	local key = vim.fn.keytrans(typed)
+	local event = get_event(M.KEY_EVENT_SOURCE.ON_KEY, key)
+	process_event(event)
 	prev_event = vim.deepcopy(event)
 end
 
@@ -170,16 +172,109 @@ local function on_key(_, typed)
 	on_key_event(typed)
 end
 
+---@param key string
+---@param meta integer
+---@return string
+local function key_note (key, meta)
+	local note = M.unparse(key, meta)
+	if not note then
+		return string.format("%d-%s", meta, key)
+	end
+	return note:match("^<(.+)>$") or note
+end
+
+local META_MASK = M.KEY_EVENT_META_MASK
+
+---Parse a key notation into key and meta mask.
+---@param key_notation string
+---@return string key
+---@return integer meta
+function M.parse(key_notation)
+	-- 1 character
+	if #key_notation == 1 then
+		if key_notation:match("%u") then
+			return key_notation:lower(), META_MASK.S
+		end
+		return key_notation, 0
+	end
+	-- <X>
+	local key = key_notation:match("^<(.+)>$")
+	if not key then
+		return key_notation, 0
+	end
+	-- <X>: X is one character
+	if #key == 1 then
+		if key:match("%u") then
+			return key:lower(), META_MASK.S
+		end
+		return key, 0
+	end
+	-- <M1-M2-...-Key>
+	local parts = {}
+	for part in key:gmatch("[^-]+") do
+		parts[#parts + 1] = part
+	end
+	-- Need at least one meta and one key.
+	if #parts < 2 then
+		return key_notation, 0
+	end
+	local meta = 0
+	for i = 1, #parts - 1 do
+		local mask = META_MASK[parts[i]:upper()]
+		if not mask then
+			return key_notation, 0
+		end
+		meta = M.set_on(meta , mask)
+	end
+	-- The last part is the key.
+	-- The key itself is not interpreted as Shift.
+	-- <C-J> means Ctrl+j, not Ctrl+Shift+j.
+	local last = parts[#parts]:lower()
+	return last, meta
+end
+
+---Unparse a key and meta mask into a canonical key notation.
+---@param key string
+---@param meta integer
+---@return string?
+function M.unparse(key, meta)
+	-- Only a single character can be represented.
+	if #key ~= 1 then
+		return nil
+	end
+	-- Uppercase key implies Shift.
+	if key:match("%u") then
+		meta = M.set_on(meta , META_MASK.S)
+	end
+	key = key:lower()
+	local chars = {}
+	-- Fixed order: S-C-A-M-D-T
+	local masks = {
+		META_MASK.S,
+		META_MASK.C,
+		META_MASK.A,
+		META_MASK.M,
+		META_MASK.D,
+		META_MASK.T,
+	}
+	for _, mask in ipairs(masks) do
+		if M.is_on(meta , mask) then
+			chars[#chars + 1] = M.KEY_EVENT_META_CHAR[mask]
+		end
+	end
+	chars[#chars + 1] = key
+	return "<" .. table.concat(chars, "-") .. ">"
+end
+
 ---@param event KeyEvent
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s\t%s\t:(%s, %s%s), [%d %d]\t%s [%d, %d]",
+		"%s\t%s\t:(%s, %s), [%d %d]\t%s [%d, %d]",
 		event.source,
 		event.type,
-		event.prev_key,
-		#event.meta_key == 0 and "" or (event.meta_key .. "-"),
-		get_prime_key(event.key),
+		key_note(event.prev_key, event.prev_meta),
+		key_note(event.key, event.meta),
 		event.nt,
 		event.nr,
 		event.ng_repeat and "NG" or "",
@@ -188,10 +283,11 @@ function M.to_string(event)
 	)
 end
 
----@param typed string
+---@param key_notation string
 ---@return KeyEvent
-function M.keymap_event(typed)
-	local event = get_event(M.KEY_EVENT_SOURCE.KEYMAP, typed)
+function M.keymap_event(key_notation)
+	local event = get_event(M.KEY_EVENT_SOURCE.KEYMAP, key_notation)
+	process_event(event)
 	prev_event = vim.deepcopy(event)
 	return event
 end
@@ -199,16 +295,61 @@ end
 ---@param event KeyEvent
 ---@return boolean
 function M.is_same_key(event)
-	return get_prime_key(event.key) == get_prime_key(event.prev_key)
+	return event.key == event.prev_key
+end
+
+---@param notation1 string
+---@param notation2 string
+---@return boolean
+function M.is_same_key_notation(notation1, notation2)
+	local key_1, meta_1 = M.parse(notation1)
+	local key2, meta_2 = M.parse(notation2)
+	return key_1 == key2 and meta_1 == meta_2
 end
 
 ---@param event KeyEvent
 ---@return integer
 function M.hold_time(event)
-	if event.type ~= M.KEY_EVENT.REPEAT then
+	if event.type ~= M.KEY_EVENT_TYPE.REPEAT then
 		return 0
 	end
 	return event.time - event.hold_start
+end
+
+---@param value integer
+---@param mask integer
+---@return boolean
+function M.is_on(value, mask)
+	return bit.band(value, mask) == mask
+end
+
+---@param value integer
+---@param mask integer
+---@return boolean
+function M.is_off(value, mask)
+	return bit.band(value, mask) == 0
+end
+
+---@param value integer
+---@param mask_on integer
+---@param mask_off integer
+---@return boolean
+function M.is_on_off(value, mask_on, mask_off)
+	return M.is_on(value, mask_on) and M.is_off(value, mask_off)
+end
+
+---@param value integer
+---@param mask integer
+---@return integer
+function M.set_on(value, mask)
+	return bit.bor(value, mask)
+end
+
+---@param value integer
+---@param mask integer
+---@return integer
+function M.set_off(value, mask)
+	return bit.band(value, bit.bnot(mask))
 end
 
 vim.on_key(on_key)
