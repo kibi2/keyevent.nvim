@@ -31,6 +31,7 @@ M.KEY_EVENT_TYPE = {
 	CLICK = "click",
 	TAP = "tap",
 	REPEAT = "repeat",
+	REPEAT_END = "repeat_end",
 }
 
 ---@enum KeyEventState
@@ -39,6 +40,10 @@ local STATE = {
 	HOLD = "hold",
 	REPEAT = "repeat",
 }
+
+local SMALL_TIME = 10
+
+local callbacks = {}
 
 ---@class KeyEvent
 ---@field source KeyEventSource
@@ -60,7 +65,7 @@ local function get_time()
 end
 
 ---@type KeyEvent
-local start_event = {
+local START_EVENT = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
 	type = M.KEY_EVENT_TYPE.CLICK,
 	ng_repeat = false,
@@ -74,10 +79,53 @@ local start_event = {
 	nr = 0,
 	hold_start = 0,
 }
----@type KeyEvent
-local prev_event = vim.deepcopy(start_event)
+---@type KeyEvent[]
+local event_hist = { START_EVENT, START_EVENT }
 ---@type KeyEventState
 local state = STATE.NORMAL
+local repeat_timer = vim.loop.new_timer()
+
+---@param event KeyEvent|nil
+local function emit(event)
+	if not event then
+		return
+	end
+	for _, callback in ipairs(callbacks) do
+		callback(event)
+	end
+	log.probe(M.to_string(event))
+end
+
+local function stop_repeat_timer()
+	repeat_timer:stop()
+end
+
+local function close_repeat_timer()
+	if not repeat_timer:is_closing() then
+		repeat_timer:stop()
+		repeat_timer:close()
+	end
+end
+
+local function start_repeat_timer()
+	repeat_timer:stop()
+	repeat_timer:start(
+		threshold.get_repeat_time(),
+		0,
+		vim.schedule_wrap(function()
+			if state ~= STATE.REPEAT then
+				return
+			end
+			state = STATE.NORMAL
+			local event = vim.deepcopy(event_hist[2])
+			event.soruce = M.KEY_EVENT_SOURCE.ON_KEY
+			event.type = M.KEY_EVENT_TYPE.REPEAT_END
+			event.time = get_time()
+			event.interval = event.time - event_hist[2].time
+			emit(event)
+		end)
+	)
+end
 
 -- EVENT:
 --  D:is different key
@@ -108,12 +156,13 @@ local function transition(event)
 			state = STATE.NORMAL
 		end
 	else
-		assert(false, state)
+		error("invalid state: " .. tostring(state))
 	end
 end
 
+---@param prev_event KeyEvent
 ---@param event KeyEvent
-local function process_normal(event)
+local function process_normal(prev_event, event)
 	if threshold.is_tap(event.interval) then
 		event.type = M.KEY_EVENT_TYPE.TAP
 	else
@@ -133,8 +182,9 @@ local function process_normal(event)
 	event.nr = 0
 end
 
+---@param prev_event KeyEvent
 ---@param event KeyEvent
-local function process_hold(event)
+local function process_hold(prev_event, event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
 	event.ng_repeat = false
 	event.hold_start = prev_event.time
@@ -148,25 +198,30 @@ local function process_repeat(event)
 	event.nr = event.nr + 1
 end
 
+---@param prev_event KeyEvent
 ---@param event KeyEvent
-local function process_event(event)
+local function process_event(prev_event, event)
 	transition(event)
 	if state == STATE.NORMAL then
-		process_normal(event)
+		process_normal(prev_event, event)
 	elseif state == STATE.HOLD then
-		process_hold(event)
+		process_hold(prev_event, event)
 	else
 		process_repeat(event)
 	end
+	if event.type == M.KEY_EVENT_TYPE.REPEAT then
+		start_repeat_timer()
+	else
+		stop_repeat_timer()
+	end
 end
 
----@param source KeyEventSource
+---@param prev_event KeyEvent
 ---@param key_notation string
 ---@return KeyEvent
-local function get_event(source, key_notation)
+local function get_event(prev_event, key_notation)
 	local key, meta = M.parse(key_notation)
 	local event = vim.deepcopy(prev_event)
-	event.source = source
 	event.key = key
 	event.prev_key = prev_event.key
 	event.meta = meta
@@ -176,21 +231,23 @@ local function get_event(source, key_notation)
 	return event
 end
 
+---@param event KeyEvent
+local function push_event(event)
+	event_hist[1] = event_hist[2]
+	event_hist[2] = vim.deepcopy(event)
+	emit(event)
+end
+
 ---@param typed string
 local function on_key_event(typed)
-	if
-		prev_event.source == M.KEY_EVENT_SOURCE.KEYMAP
-		and typed == prev_event.key
-	then
-		return
-	end
-	if get_time() - prev_event.time <= 10 then
-		return
-	end
 	local key = vim.fn.keytrans(typed)
-	local event = get_event(M.KEY_EVENT_SOURCE.ON_KEY, key)
-	process_event(event)
-	prev_event = vim.deepcopy(event)
+	if get_time() - event_hist[2].time <= SMALL_TIME then
+		return
+	end
+	local event = get_event(event_hist[2], key)
+	event.source = M.KEY_EVENT_SOURCE.ON_KEY
+	process_event(event_hist[2], event)
+	push_event(event)
 end
 
 ---@param typed string
@@ -315,9 +372,17 @@ end
 ---@param key_notation string
 ---@return KeyEvent
 function M.keymap_event(key_notation)
-	local event = get_event(M.KEY_EVENT_SOURCE.KEYMAP, key_notation)
-	process_event(event)
-	prev_event = vim.deepcopy(event)
+	local time = get_time()
+	local prev_event = event_hist[2]
+	if time - prev_event.time <= SMALL_TIME then
+		prev_event = event_hist[1]
+	end
+	local event = get_event(prev_event, key_notation)
+	event.source = M.KEY_EVENT_SOURCE.KEYMAP
+	process_event(prev_event, event)
+	if prev_event == event_hist[2] then
+		push_event(event)
+	end
 	return event
 end
 
@@ -332,8 +397,8 @@ end
 ---@return boolean
 function M.is_same_key_notation(notation1, notation2)
 	local key_1, meta_1 = M.parse(notation1)
-	local key2, meta_2 = M.parse(notation2)
-	return key_1 == key2 and meta_1 == meta_2
+	local key_2, meta_2 = M.parse(notation2)
+	return key_1 == key_2 and meta_1 == meta_2
 end
 
 ---@param event KeyEvent
@@ -381,6 +446,34 @@ function M.set_off(value, mask)
 	return bit.band(value, bit.bnot(mask))
 end
 
+function M.on_event(callback)
+	callbacks[#callbacks + 1] = callback
+end
+
+---@param mode string|string[]
+---@param lhs string
+---@param tap integer
+---@param rep integer
+---@param rhs string
+function M.set(mode, lhs, tap, rep, rhs)
+	vim.keymap.set(mode, lhs, function()
+		local event = M.keymap_event(lhs)
+		log.probe(M.to_string(event))
+		if event.nt == tap then
+			if event.nr == rep then
+				return rhs
+			elseif event.nr > rep then
+				return nil
+			end
+		end
+		return lhs
+	end, { expr = true })
+end
+
 vim.on_key(on_key)
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	callback = close_repeat_timer,
+})
 
 return M

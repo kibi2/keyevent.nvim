@@ -32,4 +32,8 @@ function M.is_tap(interval)
 	return interval <= config.threshold.tap
 end
 
+function M.get_repeat_time()
+	return math.max(config.threshold.tap, get_interval()+ config.threshold.delta)
+end
+
 return M
