@@ -94,7 +94,7 @@ local function emit(event)
 	for _, callback in ipairs(callbacks) do
 		callback(event)
 	end
-	log.probe("emit:" .. M.to_string(event))
+	-- log.probe("emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()
@@ -377,7 +377,7 @@ end
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s\t%s\t[%d %d %2d]\t%s [%3d, %d] %s",
+		"%s %6s [%d %d %2d] %s [%3d, %d] %s",
 		event.source,
 		event.ng_repeat and "NG rep" or event.type,
 		event.nt,
@@ -386,7 +386,7 @@ function M.to_string(event)
 		key_note(event.key, event.meta),
 		event.interval,
 		math.floor(M.hold_time(event) / 1000),
-		M.keys(20)
+		M.keys(10)
 	)
 end
 
