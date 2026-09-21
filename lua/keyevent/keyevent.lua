@@ -1,5 +1,6 @@
 local bit = require("bit")
 local threshold = require("keyevent.threshold")
+local history = require("keyevent.history")
 local log = require("keyevent.log")
 
 local M = {}
@@ -22,8 +23,8 @@ end
 
 ---@enum KeyEventSource
 M.KEY_EVENT_SOURCE = {
-	ON_KEY = "on_key",
-	KEYMAP = "keymap",
+	ON_KEY = "onk",
+	KEYMAP = "map",
 }
 
 ---@enum KeyEventType
@@ -31,7 +32,7 @@ M.KEY_EVENT_TYPE = {
 	CLICK = "click",
 	TAP = "tap",
 	REPEAT = "repeat",
-	REPEAT_END = "repeat_end",
+	REPEAT_END = "re_end",
 }
 
 ---@enum KeyEventState
@@ -40,8 +41,6 @@ local STATE = {
 	HOLD = "hold",
 	REPEAT = "repeat",
 }
-
-local SMALL_TIME = 10
 
 local callbacks = {}
 
@@ -93,7 +92,7 @@ local function emit(event)
 	for _, callback in ipairs(callbacks) do
 		callback(event)
 	end
-	log.probe(M.to_string(event))
+	log.probe("emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()
@@ -232,16 +231,29 @@ local function get_event(prev_event, key_notation)
 end
 
 ---@param event KeyEvent
+local function push(event)
+	if event.type == M.KEY_EVENT_TYPE.REPEAT and event.nr >= 2 then
+		return
+	end
+	history.push(vim.deepcopy(event))
+end
+
+---@param event KeyEvent
 local function push_event(event)
 	event_hist[1] = event_hist[2]
 	event_hist[2] = vim.deepcopy(event)
+	push(vim.deepcopy(event))
 	emit(event)
 end
 
 ---@param typed string
 local function on_key_event(typed)
 	local key = vim.fn.keytrans(typed)
-	if get_time() - event_hist[2].time <= SMALL_TIME then
+	if get_time() - event_hist[2].time <= vim.o.ttimeoutlen then
+		if history.peek().key == "<Esc>" and #key == 1 then
+			history.peek().key = string.format("<A-%s>", key)
+			emit(history.peek())
+		end
 		return
 	end
 	local event = get_event(event_hist[2], key)
@@ -264,9 +276,14 @@ end
 local function key_note(key, meta)
 	local note = M.unparse(key, meta)
 	if not note then
-		return string.format("%d-%s", meta, key)
+		if meta == 0 then
+			return string.format("%s", key)
+		else
+			return string.format("%d-%s", meta, key)
+		end
+	else
+		return note:match("^<(.+)>$") or note
 	end
-	return note:match("^<(.+)>$") or note
 end
 
 local META_MASK = M.KEY_EVENT_META_MASK
@@ -356,16 +373,15 @@ end
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s\t%s\t:(%s, %s), [%d %d]\t%s [%d, %d]",
+		"%s\t%s\t[%d %2d]\t%s [%3d, %d] %s",
 		event.source,
-		event.type,
-		key_note(event.prev_key, event.prev_meta),
-		key_note(event.key, event.meta),
+		event.ng_repeat and "NG rep" or event.type,
 		event.nt,
 		event.nr,
-		event.ng_repeat and "NG" or "",
+		key_note(event.key, event.meta),
 		event.interval,
-		M.hold_time(event)
+		math.floor(M.hold_time(event) / 1000),
+		M.keys(20)
 	)
 end
 
@@ -374,7 +390,7 @@ end
 function M.keymap_event(key_notation)
 	local time = get_time()
 	local prev_event = event_hist[2]
-	if time - prev_event.time <= SMALL_TIME then
+	if time - prev_event.time <= vim.o.ttimeoutlen then
 		prev_event = event_hist[1]
 	end
 	local event = get_event(prev_event, key_notation)
@@ -448,6 +464,31 @@ end
 
 function M.on_event(callback)
 	callbacks[#callbacks + 1] = callback
+end
+
+---@param count integer
+---@return  string
+function M.keys(count)
+	local seq = {}
+	for index = 1, count, 1 do
+		local event = history.peek(index)
+		if event then
+			local note = M.unparse(event.key, event.meta) or ""
+			note = note:match("^<(.)>$") or note
+			if event.type == M.KEY_EVENT_TYPE.REPEAT then
+				note = string.format("<H-%s>", event.key)
+			end
+			seq[#seq + 1] = note
+			if event.type == M.KEY_EVENT_TYPE.CLICK then
+				break
+			end
+		end
+	end
+	local reversed = {}
+	for index = #seq, 1, -1 do
+		reversed[#reversed + 1] = seq[index]
+	end
+	return table.concat(reversed)
 end
 
 ---@param mode string|string[]
