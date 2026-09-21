@@ -9,13 +9,13 @@ local history = {
 }
 
 ---@param ihistory integer
----@return  KeyEvent|nil
+---@return  KeyEvent
 local function get(ihistory)
 	if ihistory < 1 or ihistory > history.size then
-		return nil
+		return {}
 	end
 	ihistory = ((ihistory - 1) % history.size) + 1
-	return history.events[ihistory]
+	return history.events[ihistory] or {}
 end
 
 ---@param event  KeyEvent
@@ -30,7 +30,7 @@ function M.reset(event)
 end
 
 ---@param index integer|nil
----@return  KeyEvent|nil
+---@return  KeyEvent
 function M.peek(index)
 	index = index or 1
 	local ihistory = history.head - (index - 1)

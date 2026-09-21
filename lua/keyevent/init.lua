@@ -1,5 +1,6 @@
 local config = require("keyevent.config")
 local os = require("keyevent.os")
+local KeyEvent = require("keyevent.keyevent")
 local diagnosis = require("keyevent.diagnosis")
 
 local M = {}
@@ -23,6 +24,10 @@ function M.setup(opts)
 			return { "diagnosis" }
 		end,
 	})
+end
+
+function M.on_event(callback)
+	KeyEvent.on_event(callback)
 end
 
 return M

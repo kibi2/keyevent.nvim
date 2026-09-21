@@ -56,6 +56,7 @@ local callbacks = {}
 ---@field interval integer
 ---@field nt integer
 ---@field nr integer
+---@field nh integer
 ---@field hold_start integer
 
 ---@return integer
@@ -76,6 +77,7 @@ local START_EVENT = {
 	interval = 0,
 	nt = 0,
 	nr = 0,
+	nh = 0,
 	hold_start = 0,
 }
 ---@type KeyEvent[]
@@ -166,6 +168,7 @@ local function process_normal(prev_event, event)
 		event.type = M.KEY_EVENT_TYPE.TAP
 	else
 		event.type = M.KEY_EVENT_TYPE.CLICK
+		event.nh = 0
 	end
 	event.ng_repeat = threshold.is_repeat(event.interval)
 	if prev_event.type == M.KEY_EVENT_TYPE.REPEAT then
@@ -188,6 +191,7 @@ local function process_hold(prev_event, event)
 	event.ng_repeat = false
 	event.hold_start = prev_event.time
 	event.nr = 1
+	event.nh = event.nh + 1
 end
 
 ---@param event KeyEvent
@@ -373,10 +377,11 @@ end
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s\t%s\t[%d %2d]\t%s [%3d, %d] %s",
+		"%s\t%s\t[%d %d %2d]\t%s [%3d, %d] %s",
 		event.source,
 		event.ng_repeat and "NG rep" or event.type,
 		event.nt,
+		event.nh,
 		event.nr,
 		key_note(event.key, event.meta),
 		event.interval,
@@ -472,7 +477,7 @@ function M.keys(count)
 	local seq = {}
 	for index = 1, count, 1 do
 		local event = history.peek(index)
-		if event then
+		if event.key then
 			local note = M.unparse(event.key, event.meta) or ""
 			note = note:match("^<(.)>$") or note
 			if event.type == M.KEY_EVENT_TYPE.REPEAT then
@@ -489,26 +494,6 @@ function M.keys(count)
 		reversed[#reversed + 1] = seq[index]
 	end
 	return table.concat(reversed)
-end
-
----@param mode string|string[]
----@param lhs string
----@param tap integer
----@param rep integer
----@param rhs string
-function M.set(mode, lhs, tap, rep, rhs)
-	vim.keymap.set(mode, lhs, function()
-		local event = M.keymap_event(lhs)
-		log.probe(M.to_string(event))
-		if event.nt == tap then
-			if event.nr == rep then
-				return rhs
-			elseif event.nr > rep then
-				return nil
-			end
-		end
-		return lhs
-	end, { expr = true })
 end
 
 vim.on_key(on_key)

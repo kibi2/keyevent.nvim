@@ -14,6 +14,11 @@ local function get_interval()
 	return os.interval or config.threshold.interval
 end
 
+---@return integer
+local function get_tap()
+	return config.threshold.tap or vim.o.timeoutlen
+end
+
 ---@param interval integer
 ---@return boolean
 function M.is_hold(interval)
@@ -29,11 +34,11 @@ end
 ---@param interval integer
 ---@return boolean
 function M.is_tap(interval)
-	return interval <= config.threshold.tap
+	return interval <= get_tap()
 end
 
 function M.get_repeat_time()
-	return math.max(config.threshold.tap, get_interval()+ config.threshold.delta)
+	return math.max(get_tap(), get_interval() + config.threshold.delta)
 end
 
 return M
