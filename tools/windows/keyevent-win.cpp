@@ -21,7 +21,8 @@ int main()
             0))
         return 1;
 
-    const int delay_ms = 250 * (delay + 1);
+    // const int delay_ms = 250 * (delay + 1);
+    const int delay_ms = static_cast<int>(250 * (delay + 1) * 0.93 + 0.5);
 
     const double repeats_per_sec =
         2.5 + 27.5 * speed / 31.0;
