@@ -1,3 +1,4 @@
+#pragma comment(lib, "user32.lib")
 #include <windows.h>
 #include <iostream>
 
@@ -20,18 +21,6 @@ int main()
             0))
         return 1;
 
-    // SPI_GETKEYBOARDDELAY:
-    //   0..3
-    //   250ms, 500ms, 750ms, 1000ms
-    //
-    // SPI_GETKEYBOARDSPEED:
-    //   0..31
-    //   1..30 repeats/sec 相当
-    //
-    // Windows の repeat interval は概ね
-    // 1000 / (2.5 + 27.5 * speed / 31) ms
-    //
-    // として扱えます。
     const int delay_ms = 250 * (delay + 1);
 
     const double repeats_per_sec =
