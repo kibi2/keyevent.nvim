@@ -65,7 +65,7 @@ local function get_time()
 end
 
 ---@type KeyEvent
-M.START_EVENT = {
+START_EVENT = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
 	type = M.KEY_EVENT_TYPE.CLICK,
 	ng_repeat = false,
@@ -81,7 +81,7 @@ M.START_EVENT = {
 	hold_start = 0,
 }
 ---@type KeyEvent[]
-local event_hist = { M.START_EVENT, M.START_EVENT }
+local event_hist = { START_EVENT, START_EVENT }
 ---@type KeyEventState
 local state = STATE.NORMAL
 local repeat_timer = vim.loop.new_timer()

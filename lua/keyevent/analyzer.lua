@@ -1,78 +1,71 @@
 local KeyEvent = require("keyevent.keyevent")
+local Histgram = require("keyevent.histgram")
 local log = require("keyevent.log")
 
 local M = {}
 
----@class Sample
----@field leader KeyEvent
----@field count integer
----@field total integer
----@field events KeyEvent[]
-
 local DELTA = 50
-local MIN_COUNT = 3
-local MAX_SAMPLE = 3
-local nsample = MAX_SAMPLE
 
 M.prefs = {
 	delay = 0,
 	interval = 0,
 }
 
----@type Sample
-local sample = {
-	leader = KeyEvent.START_EVENT,
-	count = 0,
-	total = 0,
-	events = {},
-}
-
-local master = vim.deepcopy(sample)
+local prev_interval = { math.huge, math.huge }
+local hist_repeat = Histgram.new(5)
+local hist_leader = Histgram.new(10, true)
+local repeat_count = 0
+local MAX_DELAY = 1050
+local delay = MAX_DELAY
 
 local function neary_equal(val1, val2)
 	return math.abs(val1 - val2) <= DELTA
 end
 
-local function get_ave()
-	if sample.count == 0 then
-		return math.huge / 2
+---@param event KeyEvent
+local function is_repeat(event)
+	if event.key ~= event.prev_key then
+		return false
 	end
-	return math.floor(sample.total / sample.count)
+	if prev_interval[2] >= MAX_DELAY then
+		return false
+	end
+	if prev_interval[1] >= MAX_DELAY then
+		return false
+	end
+	return neary_equal(event.interval, prev_interval[2])
+end
+
+local function hist_add(histgram, interval)
+	if delay < MAX_DELAY then
+		Histgram.add(histgram, interval)
+	end
 end
 
 ---@param event KeyEvent
 local function on_event(event)
-	if neary_equal(event.interval, get_ave()) then
-		sample.count = sample.count + 1
-		sample.total = sample.total + event.interval
-		sample.events[sample.count] = event
-	else
-		if sample.count == 1 then
-			sample.leader = sample.events[sample.count]
+	if is_repeat(event) then
+		repeat_count = repeat_count + 1
+		if repeat_count == 1 then
+			delay = prev_interval[1]
+			hist_add(hist_leader, delay)
+			hist_add(hist_repeat, prev_interval[2])
+		end
+		hist_add(hist_repeat, event.interval)
+	elseif repeat_count ~= 0 then
+		repeat_count = 0
+		M.prefs.interval = math.floor(Histgram.median_average(hist_repeat))
+		if Histgram.mode_ratio(hist_leader) > 0.5 then
+			M.prefs.delay = math.floor(Histgram.mode_ave(hist_leader))
 		else
-			sample.leader = event
-			if sample.count >= master.count then
-				master = vim.deepcopy(sample)
-				log.probe(
-					"master %d %d %d",
-					master.count,
-					master.leader.interval,
-					M.prefs.interval
-				)
-			end
+			M.prefs.delay = M.prefs.interval
 		end
-		sample.count = 1
-		sample.total = event.interval
-		sample.events[sample.count] = event
-	end
-	if sample.count > math.max(master.count, 2) then
-		M.prefs.interval = get_ave()
-		M.prefs.delay = M.prefs.interval
-		if neary_equal(sample.leader.interval, master.leader.interval) then
-			M.prefs.delay = sample.leader.interval
-		end
+		log.probe("\n" .. Histgram.to_string(hist_leader))
+		log.probe("\n" .. Histgram.to_string(hist_repeat))
 		log.probe(M.prefs)
 	end
+	prev_interval[1] = prev_interval[2]
+	prev_interval[2] = event.interval
 end
 
 function M.setup()
