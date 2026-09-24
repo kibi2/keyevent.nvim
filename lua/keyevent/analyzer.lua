@@ -36,9 +36,12 @@ local function is_repeat(event)
 	return neary_equal(event.interval, prev_interval[2])
 end
 
+---@param histgram Histgram
+---@param interval integer:w
+---@return Histgram|nil
 local function hist_add(histgram, interval)
 	if delay < MAX_DELAY then
-		Histgram.add(histgram, interval)
+		return Histgram.add(histgram, interval)
 	end
 end
 

@@ -3,6 +3,7 @@ local M = {}
 ---@class HistgramBin
 ---@field count integer
 ---@field total number
+---@field hist Histgram|nil
 
 ---@class Histgram
 ---@field bin integer
@@ -34,10 +35,10 @@ function M.new(bin, overlap)
 end
 
 ---@param hist Histgram
----@param value number
-function M.add(hist, value)
-	hist.count = hist.count + 1
-	local index = math.floor(value / hist.bin)
+---@param index integer
+---@param value integer
+---@return HistgramBin
+local function add_bin(hist, index, value)
 	local bin = hist.bins[index]
 	if not bin then
 		bin = {
@@ -48,19 +49,20 @@ function M.add(hist, value)
 	end
 	bin.count = bin.count + 1
 	bin.total = bin.total + value
+	return bin
+end
+
+---@param hist Histgram
+---@param value number
+function M.add(hist, value)
+	hist.count = hist.count + 1
+	local index = math.floor(value / hist.bin)
+	local bin = add_bin(hist, index, value)
 	if hist.overlap then
 		local index = math.floor((value - hist.bin / 2) / hist.bin)
-		local bin = hist.bins[index]
-		if not bin then
-			bin = {
-				count = 0,
-				total = 0,
-			}
-			hist.bins[index] = bin
-		end
-		bin.count = bin.count + 1
-		bin.total = bin.total + value
+		add_bin(hist, index, value)
 	end
+	return bin.hist
 end
 
 ---@param hist Histgram
