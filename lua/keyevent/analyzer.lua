@@ -1,4 +1,3 @@
-local KeyEvent = require("keyevent.keyevent")
 local Histgram = require("keyevent.histgram")
 local log = require("keyevent.log")
 
@@ -6,14 +5,11 @@ local M = {}
 
 local DELTA = 50
 
-M.prefs = {
-	delay = 0,
-	interval = 0,
-}
+M.delay = 0
+M.interval = 0
 
 local prev_interval = { math.huge, math.huge }
-local hist_repeat = Histgram.new(5)
-local hist_leader = Histgram.new(10, true)
+local hist = Histgram.new(5, 10)
 local repeat_count = 0
 local MAX_DELAY = 1050
 local delay = MAX_DELAY
@@ -37,42 +33,36 @@ local function is_repeat(event)
 end
 
 ---@param histgram Histgram
----@param interval integer:w
----@return Histgram|nil
-local function hist_add(histgram, interval)
+---@param interval integer
+---@param delay integer
+local function hist_add(histgram, interval, delay)
 	if delay < MAX_DELAY then
-		return Histgram.add(histgram, interval)
+		Histgram.add(histgram, interval, delay)
 	end
 end
 
 ---@param event KeyEvent
-local function on_event(event)
+function M.on_event(event)
 	if is_repeat(event) then
 		repeat_count = repeat_count + 1
 		if repeat_count == 1 then
 			delay = prev_interval[1]
-			hist_add(hist_leader, delay)
-			hist_add(hist_repeat, prev_interval[2])
+			hist_add(hist, prev_interval[2], delay)
 		end
-		hist_add(hist_repeat, event.interval)
+		hist_add(hist, event.interval, delay)
 	elseif repeat_count ~= 0 then
 		repeat_count = 0
-		M.prefs.interval = math.floor(Histgram.median_average(hist_repeat))
-		if Histgram.mode_ratio(hist_leader) > 0.5 then
-			M.prefs.delay = math.floor(Histgram.mode_ave(hist_leader))
-		else
-			M.prefs.delay = M.prefs.interval
+		local ave, delay_hist = Histgram.median_average(hist)
+		M.interval = math.floor(ave)
+		if delay_hist then
+			M.delay = math.floor(Histgram.median_average(delay_hist))
+			log.debug("\n" .. Histgram.to_string(delay_hist))
+			log.debug("\n" .. Histgram.to_string(hist))
 		end
-		log.probe("\n" .. Histgram.to_string(hist_leader))
-		log.probe("\n" .. Histgram.to_string(hist_repeat))
-		log.probe(M.prefs)
+		log.debug({ M.delya, M.interval })
 	end
 	prev_interval[1] = prev_interval[2]
 	prev_interval[2] = event.interval
-end
-
-function M.setup()
-	KeyEvent.on_event(on_event)
 end
 
 return M

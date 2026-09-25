@@ -1,4 +1,5 @@
 local bit = require("bit")
+local analyzer = require("keyevent.analyzer")
 local threshold = require("keyevent.threshold")
 local history = require("keyevent.history")
 local log = require("keyevent.log")
@@ -65,7 +66,7 @@ local function get_time()
 end
 
 ---@type KeyEvent
-START_EVENT = {
+local START_EVENT = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
 	type = M.KEY_EVENT_TYPE.CLICK,
 	ng_repeat = false,
@@ -94,7 +95,7 @@ local function emit(event)
 	for _, callback in ipairs(callbacks) do
 		callback(event)
 	end
-	-- log.probe("emit:" .. M.to_string(event))
+	log.debug("emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()
@@ -119,7 +120,7 @@ local function start_repeat_timer()
 			end
 			state = STATE.NORMAL
 			local event = vim.deepcopy(event_hist[2])
-			event.soruce = M.KEY_EVENT_SOURCE.ON_KEY
+			event.source = M.KEY_EVENT_SOURCE.ON_KEY
 			event.type = M.KEY_EVENT_TYPE.REPEAT_END
 			event.time = get_time()
 			event.interval = event.time - event_hist[2].time
@@ -497,6 +498,7 @@ function M.keys(count)
 end
 
 vim.on_key(on_key)
+M.on_event(analyzer.on_event)
 
 vim.api.nvim_create_autocmd("VimLeavePre", {
 	callback = close_repeat_timer,

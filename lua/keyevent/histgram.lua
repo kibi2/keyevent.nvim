@@ -1,3 +1,5 @@
+local log = require("keyevent.log")
+
 local M = {}
 
 ---@class HistgramBin
@@ -6,8 +8,8 @@ local M = {}
 ---@field hist Histgram|nil
 
 ---@class Histgram
----@field bin integer
----@field overlap boolean
+---@field bin1 integer
+---@field bin2 integer|nil
 ---@field count integer
 ---@field bins HistgramBin[]
 
@@ -22,13 +24,14 @@ local function get_indexes(hist)
 	return indexes
 end
 
----@param bin integer
----@param overlap? boolean
+---@param bin1 integer
+---@param bin2 integer|nil
 ---@return Histgram
-function M.new(bin, overlap)
+function M.new(bin1, bin2)
+	---@type Histgram
 	return {
-		bin = bin,
-		overlap = overlap or false,
+		bin1 = bin1,
+		bin2 = bin2,
 		count = 0,
 		bins = {},
 	}
@@ -44,6 +47,7 @@ local function add_bin(hist, index, value)
 		bin = {
 			count = 0,
 			total = 0,
+			hist = hist.bin2 and M.new(hist.bin2) or nil,
 		}
 		hist.bins[index] = bin
 	end
@@ -52,21 +56,23 @@ local function add_bin(hist, index, value)
 	return bin
 end
 
----@param hist Histgram
----@param value number
-function M.add(hist, value)
-	hist.count = hist.count + 1
-	local index = math.floor(value / hist.bin)
-	local bin = add_bin(hist, index, value)
-	if hist.overlap then
-		local index = math.floor((value - hist.bin / 2) / hist.bin)
-		add_bin(hist, index, value)
+---@param hist Histgram|nil
+---@param value1 integer|nil
+---@param value2 integer|nil
+function M.add(hist, value1, value2)
+	if not hist then
+		return
 	end
-	return bin.hist
+	hist.count = hist.count + 1
+	local index = math.floor(value1 / hist.bin1)
+	assert(value1)
+	local bin = add_bin(hist, index, value1)
+	M.add(bin.hist, value2)
 end
 
 ---@param hist Histgram
 ---@return number
+---@return Histgram|nil
 function M.median_average(hist)
 	if hist.count == 0 then
 		return math.huge
@@ -77,7 +83,7 @@ function M.median_average(hist)
 		local bin = hist.bins[index]
 		count = count + bin.count
 		if count >= middle then
-			return bin.total / bin.count
+			return bin.total / bin.count, bin.hist
 		end
 	end
 	return math.huge
@@ -99,6 +105,7 @@ end
 
 ---@param hist Histgram
 ---@return number
+---@return Histgram|nil
 function M.mode_ave(hist)
 	if hist.count == 0 then
 		return math.huge
@@ -110,7 +117,7 @@ function M.mode_ave(hist)
 		end
 	end
 	if not mode then
-		return math.huge
+		return math.huge, mode.hist
 	end
 	return mode.total / mode.count
 end

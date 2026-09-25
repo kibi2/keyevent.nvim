@@ -1,11 +1,14 @@
+local config = require("keyevent.config")
+local os = require("keyevent.os")
+local analyzer = require("keyevent.analyzer")
+
 local M = {}
 
 --------------------------------------------------
 -- config
 --------------------------------------------------
 
-local key_set = { "h", "j", "k", "l", }
-local margin_rate = 0.2
+local key_set = { "h", "j", "k", "l" }
 
 --------------------------------------------------
 -- state
@@ -66,16 +69,6 @@ local function format_value(value)
 	return tostring(value)
 end
 
----@param minimum integer|nil
----@param maximum integer|nil
----@return integer
-local function margin(minimum, maximum)
-	if minimum == nil or maximum == nil then
-		return 0
-	end
-	return math.ceil((maximum - minimum) * margin_rate)
-end
-
 --------------------------------------------------
 -- measurement
 --------------------------------------------------
@@ -114,29 +107,17 @@ local function suggested_config()
 	local hold_max = max_value(hold_intervals)
 	local repeat_min = min_value(repeat_intervals)
 	local repeat_max = max_value(repeat_intervals)
-	local hold_margin = margin(hold_min, hold_max)
-	local repeat_margin = margin(repeat_min, repeat_max)
-	local rep1
-	if repeat_max then
-		rep1 = repeat_min - repeat_margin
+	local interval
+	if repeat_max and repeat_min then
+		interval = math.ceil((repeat_max + repeat_min) / 2)
 	end
-	local rep2
-	if repeat_max then
-		rep2 = repeat_max + repeat_margin
-	end
-	local hold1
-	if hold_min then
-		hold1 = math.max(0, hold_min - hold_margin)
-	end
-	local hold2
-	if hold_max then
-		hold2 = hold_max + hold_margin
+	local delay
+	if hold_max and hold_min then
+		delay = math.ceil((hold_max + hold_min) / 2)
 	end
 	return {
-		"  rep1  = " .. format_value(rep1) .. ",",
-		"  rep2  = " .. format_value(rep2) .. ",",
-		"  hold1 = " .. format_value(hold1) .. ",",
-		"  hold2 = " .. format_value(hold2) .. ",",
+		"  delay    = " .. format_value(delay) .. ",",
+		"  interval = " .. format_value(interval) .. ",",
 	}
 end
 
@@ -151,7 +132,7 @@ local function make_lines()
 	local repeat_min = min_value(repeat_intervals)
 	local repeat_max = max_value(repeat_intervals)
 	local lines = {
-		"===== Rush diagnosis =====",
+		"===== Key event diagnosis =====",
 		"",
 		"Press and hold one of these keys:",
 		"  'h', 'j', 'k', or 'l'",
@@ -170,13 +151,13 @@ local function make_lines()
 		"",
 		"        count   min(ms)   max(ms)",
 		string.format(
-			"hold    %5d   %7s   %7s",
+			"delay    %5d   %7s   %7s",
 			#hold_intervals,
 			format_value(hold_min),
 			format_value(hold_max)
 		),
 		string.format(
-			"repeat  %5d   %7s   %7s",
+			"interval %5d   %7s   %7s",
 			#repeat_intervals,
 			format_value(repeat_min),
 			format_value(repeat_max)
@@ -189,6 +170,25 @@ local function make_lines()
 	vim.list_extend(lines, {
 		"",
 		"----------------------------------------",
+		"",
+		"            delay  interval       tap     delta",
+		string.format(
+			"  config%9s %9s %9s %9s",
+			format_value(config.threshold.delay),
+			format_value(config.threshold.interval),
+			format_value(config.threshold.tap),
+			format_value(config.threshold.delta)
+		),
+		string.format(
+			"  os    %9s %9s",
+			format_value(os.delay),
+			format_value(os.interval)
+		),
+		string.format(
+			"  analyzer  %5s %9s",
+			format_value(analyzer.delay),
+			format_value(analyzer.interval)
+		),
 		"",
 		"Press <Esc> to close.",
 	})
@@ -303,7 +303,7 @@ local function create_window()
 	vim.bo[buf].swapfile = false
 	vim.bo[buf].modifiable = false
 	local width = 64
-	local height = 32
+	local height = 35
 	local ui = vim.api.nvim_list_uis()[1]
 	local row = math.floor((ui.height - height) / 2)
 	local col = math.floor((ui.width - width) / 2)

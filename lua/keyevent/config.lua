@@ -3,9 +3,17 @@ local M = {}
 local default_config = {
 	threshold = {
 		delta = 20,
-		interval = 83,
-		delay = 500,
 		tap = 500,
+	},
+	log = {
+		level = vim.log.levels.ERROR,
+		output = "file", -- "buffer", "file", "print", "notify"
+		buffer_name = "keyevent://log",
+		file_name = "/tmp/keyevent.log",
+		use_timestamp = false,
+		single_line = true,
+		probe = true,
+		monitor = false,
 	},
 }
 

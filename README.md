@@ -90,18 +90,18 @@ j ───────────── hold
           key repeats
 ```
 
-The event contains information such as:
+A `KeyEvent` contains information such as:
 
 ```text
-key : 押したキー
-prev_key : 前回のkey
-meta : 押していたメタキー
-prev_meta : 前回のmeta
-interval : 前のキー入力からの経過時間
-nt : 連続タップ回数
-nh : 押し下げ回数
-nr : repeat回数
-hold_start : 押し下げを開始した時刻
+key         : the key that was pressed
+prev_key    : the previous key
+meta        : modifier keys held with the key
+prev_meta   : modifier keys held with the previous key
+interval    : elapsed time since the previous key event
+nt          : number of consecutive taps
+nh          : number of hold events
+nr          : number of repeat events
+hold_start  : time when the hold started
 ```
 
 This allows another plugin to decide what the sequence means.
@@ -269,20 +269,26 @@ require("keyevent").setup({
 
 `tap` defines the maximum interval treated as a tap.
 
-他に二つのパラメータがあります。
+There are two additional timing parameters:
 
-`delay` キーを押し下げてからリピートが始まるまでの間隔
+* `delay` — the time from pressing a key until key repeat starts
+* `interval` — the interval between repeated key events
 
-`interval` キーリピートの間隔
+`keyevent.nvim` automatically obtains these values from the operating system using the following tools:
 
-この二つはkeyevnt.nvimがtoolを利用してosに問い合わせて自動で取得します。
-* tools/macos/keyevent-macos
-* tools/windows/keyevent-win.exe
-* tools/X11/keyevent-x11
-ですがlinux waylandに対応したツールは準備していないのでos問い合わせは失敗します。
-osに対する問い合わせが失敗した場合は統計的に値を推定して使用します。
-またキーボードを複数の計算機で共有している場合は正しい値が取得できません。
-tap, repeat などの判定がうまくいかない場合は診断ツールを使用してdelay, intervalの値をsetupを使って指定してください。
+```text
+tools/macos/keyevent-macos
+tools/windows/keyevent-win.exe
+tools/X11/keyevent-x11
+```
+
+There is currently no tool for Linux Wayland, so obtaining the values from the operating system will fail in that environment.
+
+If the operating system query fails, `keyevent.nvim` estimates the values statistically from observed key input.
+
+The automatically obtained values may also be inaccurate when the same keyboard is shared between multiple computers, because the local operating system settings may not reflect the timing of the actual keyboard input.
+
+If tap, hold, or repeat detection does not work correctly, use the diagnosis tool to measure the actual timing and specify `delay` and `interval` explicitly in your configuration.
 
 All timing values are in milliseconds.
 
@@ -310,9 +316,13 @@ require("example.keymap")
 
 The example uses `n` normally and shows the search history when `n` is held.
 
-### rush.nvim
+### `rush.nvim`
 
-少し複雑な利用例です。キーをタイプするパターンによってカーソルの移動量を変化させるプラグインです。
+A slightly more complex example is [`rush.nvim`](https://github.com/kibi2/rush.nvim).
+
+It changes the cursor movement distance depending on how a key is typed.
+
+For example, the meaning of a motion key can change depending on whether it is tapped repeatedly or held.
 
 ## Why?
 

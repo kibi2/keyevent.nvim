@@ -1,12 +1,15 @@
 local log = require("keyevent.log")
 
 local M = {}
+
 local function get_prefs(path)
 	if not path then
 		return
 	end
-	local result = vim.system({ path }):wait()
-	if result.code ~= 0 then
+	local ok, result = pcall(function()
+		return vim.system({ path }):wait()
+	end)
+	if not ok or result.code ~= 0 then
 		return
 	end
 	local ok, data = pcall(vim.json.decode, result.stdout)
@@ -44,8 +47,8 @@ function M.setup()
 		M.delay = prefs.delay
 		M.interval = prefs.interval
 	end
-	log.probe("delay = " .. (M.delay or "nil"))
-	log.probe("interval = " .. (M.interval or "nil"))
+	log.debug("delay = " .. (M.delay or "nil"))
+	log.debug("interval = " .. (M.interval or "nil"))
 end
 
 return M

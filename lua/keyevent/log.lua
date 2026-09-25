@@ -2,19 +2,8 @@ local api = vim.api -- Neovim
 local bo = vim.bo
 local fn = vim.fn
 
-local notify = require("keyevent/notify")
-local config = {
-	log = {
-		level = vim.log.levels.DEBUG,
-		output = "buffer", -- "buffer", "file", "print", "notify"
-		buffer_name = "rush://log",
-		file_name = "/tmp/rush.log",
-		use_timestamp = false,
-		single_line = true,
-		probe = true,
-		monitor = false,
-	},
-}
+local notify = require("keyevent.notify")
+local config = require("keyevent.config")
 
 -- =============================================================================
 
@@ -23,7 +12,7 @@ local M = {}
 local levels = vim.log.levels
 
 local level_names = {}
-local PREFIX = "TIR"
+local PREFIX = "KEY"
 local uv = vim.loop
 local queue = {}
 local scheduled = false
