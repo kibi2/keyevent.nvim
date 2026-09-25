@@ -34,6 +34,7 @@ M.KEY_EVENT_TYPE = {
 	TAP = "tap",
 	REPEAT = "repeat",
 	REPEAT_END = "re_end",
+	BREAK = "BREAK", -- The key event sequence was interrupted by a buffer switch.
 }
 
 ---@enum KeyEventState
@@ -47,6 +48,7 @@ local callbacks = {}
 
 ---@class KeyEvent
 ---@field source KeyEventSource
+---@field bufnr integer
 ---@field type KeyEventType
 ---@field ng_repeat boolean
 ---@field key string
@@ -68,6 +70,7 @@ end
 ---@type KeyEvent
 local START_EVENT = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
+	bufnr = 0,
 	type = M.KEY_EVENT_TYPE.CLICK,
 	ng_repeat = false,
 	key = "",
@@ -92,7 +95,15 @@ local function emit(event)
 	if not event then
 		return
 	end
+	local event_break
+	if event.bufnr ~= event_hist[2].bufnr then
+		event_break = vim.deepcopy(event_hist[2])
+		event_break.type = M.KEY_EVENT_TYPE.BREAK
+	end
 	for _, callback in ipairs(callbacks) do
+		if event_break then
+			callback(event_break)
+		end
 		callback(event)
 	end
 	log.debug("emit:" .. M.to_string(event))
@@ -226,6 +237,7 @@ end
 local function get_event(prev_event, key_notation)
 	local key, meta = M.parse(key_notation)
 	local event = vim.deepcopy(prev_event)
+	event.bufnr = vim.api.nvim_get_current_buf()
 	event.key = key
 	event.prev_key = prev_event.key
 	event.meta = meta
@@ -245,10 +257,10 @@ end
 
 ---@param event KeyEvent
 local function push_event(event)
-	event_hist[1] = event_hist[2]
-	event_hist[2] = vim.deepcopy(event)
 	push(vim.deepcopy(event))
 	emit(event)
+	event_hist[1] = event_hist[2]
+	event_hist[2] = vim.deepcopy(event)
 end
 
 ---@param typed string
@@ -378,9 +390,9 @@ end
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s %6s [%d %d %2d] %s [%3d, %d] %s",
+		"%s %-6s [%d %d %2d] %s [%3d, %d] %s",
 		event.source,
-		event.ng_repeat and "NG rep" or event.type,
+		(event.ng_repeat and "NG " or "") .. event.type,
 		event.nt,
 		event.nh,
 		event.nr,
