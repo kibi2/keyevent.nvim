@@ -13,7 +13,7 @@ M.KEY_EVENT_META_MASK = {
 	A = 4, -- alt
 	M = 8, -- meta
 	D = 16, -- command / Super
-	T = 32, -- Meta（Altではない場合）
+	T = 32, -- Meta(not Alt)
 }
 
 ---@type {integer:string}
