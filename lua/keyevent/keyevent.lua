@@ -509,6 +509,12 @@ function M.keys(count)
 	return table.concat(reversed)
 end
 
+---@param index integer
+---@return KeyEvent
+function M.peek(index)
+	return history.peek(index)
+end
+
 vim.on_key(on_key)
 M.on_event(analyzer.on_event)
 

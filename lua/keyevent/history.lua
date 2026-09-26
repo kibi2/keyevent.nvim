@@ -2,6 +2,12 @@ local log = require("keyevent.log")
 
 local M = {}
 
+---@class KeyEventHistory
+---@field events KeyEvent[]
+---@field head integer
+---@field size integer
+
+---@ypte KeyEventHistory
 local history = {
 	events = {},
 	head = 20,
