@@ -47,8 +47,8 @@ function M.setup()
 		M.delay = prefs.delay
 		M.interval = prefs.interval
 	end
-	log.debug("delay = " .. (M.delay or "nil"))
-	log.debug("interval = " .. (M.interval or "nil"))
+	log.watch("OS", "delay = " .. (M.delay or "nil"))
+	log.watch("OS", "interval = " .. (M.interval or "nil"))
 end
 
 return M

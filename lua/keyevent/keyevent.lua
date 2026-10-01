@@ -1,13 +1,13 @@
-local bit = require("bit")
 local analyzer = require("keyevent.analyzer")
 local threshold = require("keyevent.threshold")
 local history = require("keyevent.history")
+local bitflag = require("keyevent.bitflag")
 local log = require("keyevent.log")
 
 local M = {}
 
 ---@enum KeyEventMetaMask
-M.KEY_EVENT_META_MASK = {
+local META = {
 	S = 1, -- shift
 	C = 2, -- ctrl
 	A = 4, -- alt
@@ -17,9 +17,9 @@ M.KEY_EVENT_META_MASK = {
 }
 
 ---@type {integer:string}
-M.KEY_EVENT_META_CHAR = {}
-for key, mask in pairs(M.KEY_EVENT_META_MASK) do
-	M.KEY_EVENT_META_CHAR[mask] = key
+local META_CHAR = {}
+for key, mask in pairs(META) do
+	META_CHAR[mask] = key
 end
 
 ---@enum KeyEventSource
@@ -63,21 +63,23 @@ local callbacks = {}
 ---@field hold_start integer
 
 ---@return integer
-local function get_time()
+local default_time = function()
 	return math.floor(vim.loop.hrtime() / 1e6)
 end
+
+local time = default_time
 
 ---@type KeyEvent
 local START_EVENT = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
-	bufnr = 0,
+	bufnr = -1,
 	type = M.KEY_EVENT_TYPE.CLICK,
 	ng_repeat = false,
 	key = "",
 	prev_key = "",
 	meta = 0,
 	prev_meta = 0,
-	time = get_time(),
+	time = time(),
 	interval = 0,
 	nt = 0,
 	nr = 0,
@@ -96,7 +98,8 @@ local function emit(event)
 		return
 	end
 	local event_break
-	if event.bufnr ~= event_hist[2].bufnr then
+	if event.bufnr ~= event_hist[2].bufnr and event_hist[2].bufnr ~= -1 then
+		log.watch(event.source, "emit:BREAK")
 		event_break = vim.deepcopy(event_hist[2])
 		event_break.type = M.KEY_EVENT_TYPE.BREAK
 	end
@@ -106,7 +109,7 @@ local function emit(event)
 		end
 		callback(event)
 	end
-	log.debug("emit:" .. M.to_string(event))
+	log.watch(event.source, "emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()
@@ -133,7 +136,7 @@ local function start_repeat_timer()
 			local event = vim.deepcopy(event_hist[2])
 			event.source = M.KEY_EVENT_SOURCE.ON_KEY
 			event.type = M.KEY_EVENT_TYPE.REPEAT_END
-			event.time = get_time()
+			event.time = time()
 			event.interval = event.time - event_hist[2].time
 			emit(event)
 		end)
@@ -242,17 +245,22 @@ local function get_event(prev_event, key_notation)
 	event.prev_key = prev_event.key
 	event.meta = meta
 	event.prev_meta = prev_event.meta
-	event.time = get_time()
+	event.time = time()
 	event.interval = event.time - prev_event.time
 	return event
 end
 
 ---@param event KeyEvent
 local function push(event)
-	if event.type == M.KEY_EVENT_TYPE.REPEAT and event.nr >= 2 then
-		return
+	local prev_event = history.peek()
+	if
+		event.type == M.KEY_EVENT_TYPE.REPEAT
+		and event.type == prev_event.type
+	then
+		history.reset(vim.deepcopy(event))
+	else
+		history.push(vim.deepcopy(event))
 	end
-	history.push(vim.deepcopy(event))
 end
 
 ---@param event KeyEvent
@@ -263,10 +271,9 @@ local function push_event(event)
 	event_hist[2] = vim.deepcopy(event)
 end
 
----@param typed string
-local function on_key_event(typed)
-	local key = vim.fn.keytrans(typed)
-	if get_time() - event_hist[2].time <= vim.o.ttimeoutlen then
+---@param key string
+local function on_key_event(key)
+	if time() - event_hist[2].time <= vim.o.ttimeoutlen then
 		if history.peek().key == "<Esc>" and #key == 1 then
 			history.peek().key = string.format("<A-%s>", key)
 			emit(history.peek())
@@ -284,7 +291,7 @@ local function on_key(_, typed)
 	if #typed == 0 then
 		return
 	end
-	on_key_event(typed)
+	on_key_event(vim.fn.keytrans(typed))
 end
 
 ---@param key string
@@ -303,7 +310,9 @@ local function key_note(key, meta)
 	end
 end
 
-local META_MASK = M.KEY_EVENT_META_MASK
+function M.meta()
+	return META
+end
 
 ---Parse a key notation into key and meta mask.
 ---@param key_notation string
@@ -313,7 +322,7 @@ function M.parse(key_notation)
 	-- 1 character
 	if #key_notation == 1 then
 		if key_notation:match("%u") then
-			return key_notation:lower(), META_MASK.S
+			return key_notation:lower(), META.S
 		end
 		return key_notation, 0
 	end
@@ -325,7 +334,7 @@ function M.parse(key_notation)
 	-- <X>: X is one character
 	if #key == 1 then
 		if key:match("%u") then
-			return key:lower(), META_MASK.S
+			return key:lower(), META.S
 		end
 		return key, 0
 	end
@@ -340,11 +349,11 @@ function M.parse(key_notation)
 	end
 	local meta = 0
 	for i = 1, #parts - 1 do
-		local mask = META_MASK[parts[i]:upper()]
+		local mask = META[parts[i]:upper()]
 		if not mask then
 			return key_notation, 0
 		end
-		meta = M.set_on(meta, mask)
+		meta = bitflag.set_on(meta, mask)
 	end
 	-- The last part is the key.
 	-- The key itself is not interpreted as Shift.
@@ -364,22 +373,22 @@ function M.unparse(key, meta)
 	end
 	-- Uppercase key implies Shift.
 	if key:match("%u") then
-		meta = M.set_on(meta, META_MASK.S)
+		meta = bitflag.set_on(meta, META.S)
 	end
 	key = key:lower()
 	local chars = {}
 	-- Fixed order: S-C-A-M-D-T
 	local masks = {
-		META_MASK.S,
-		META_MASK.C,
-		META_MASK.A,
-		META_MASK.M,
-		META_MASK.D,
-		META_MASK.T,
+		META.S,
+		META.C,
+		META.A,
+		META.M,
+		META.D,
+		META.T,
 	}
 	for _, mask in ipairs(masks) do
-		if M.is_on(meta, mask) then
-			chars[#chars + 1] = M.KEY_EVENT_META_CHAR[mask]
+		if bitflag.is_on(meta, mask) then
+			chars[#chars + 1] = META_CHAR[mask]
 		end
 	end
 	chars[#chars + 1] = key
@@ -390,7 +399,7 @@ end
 ---@return string
 function M.to_string(event)
 	return string.format(
-		"%s %-6s [%d %d %2d] %s [%3d, %d] %s",
+		"%s %-6s (%d %d %2d) %3s (%3d %d) %s",
 		event.source,
 		(event.ng_repeat and "NG " or "") .. event.type,
 		event.nt,
@@ -406,7 +415,7 @@ end
 ---@param key_notation string
 ---@return KeyEvent
 function M.keymap_event(key_notation)
-	local time = get_time()
+	local time = time()
 	local prev_event = event_hist[2]
 	if time - prev_event.time <= vim.o.ttimeoutlen then
 		prev_event = event_hist[1]
@@ -444,57 +453,31 @@ function M.hold_time(event)
 	return event.time - event.hold_start
 end
 
----@param value integer
----@param mask integer
----@return boolean
-function M.is_on(value, mask)
-	return bit.band(value, mask) == mask
-end
-
----@param value integer
----@param mask integer
----@return boolean
-function M.is_off(value, mask)
-	return bit.band(value, mask) == 0
-end
-
----@param value integer
----@param mask_on integer
----@param mask_off integer
----@return boolean
-function M.is_on_off(value, mask_on, mask_off)
-	return M.is_on(value, mask_on) and M.is_off(value, mask_off)
-end
-
----@param value integer
----@param mask integer
----@return integer
-function M.set_on(value, mask)
-	return bit.bor(value, mask)
-end
-
----@param value integer
----@param mask integer
----@return integer
-function M.set_off(value, mask)
-	return bit.band(value, bit.bnot(mask))
-end
-
 function M.on_event(callback)
 	callbacks[#callbacks + 1] = callback
+end
+
+---@param count integer
+---@return  KeyEvent[]
+function M.get_evcents(count)
+	---@type KeyEvent[]
+	local seq = {}
+	for index = 1, count do
+		seq[#seq + 1] = history.peek(index)
+	end
+	return seq
 end
 
 ---@param count integer
 ---@return  string
 function M.keys(count)
 	local seq = {}
-	for index = 1, count, 1 do
-		local event = history.peek(index)
+	for _, event in ipairs(M.get_evcents(count)) do
 		if event.key then
 			local note = M.unparse(event.key, event.meta) or ""
 			note = note:match("^<(.)>$") or note
 			if event.type == M.KEY_EVENT_TYPE.REPEAT then
-				note = string.format("<H-%s>", event.key)
+				note = string.format("↻")
 			end
 			seq[#seq + 1] = note
 			if event.type == M.KEY_EVENT_TYPE.CLICK then
@@ -513,6 +496,18 @@ end
 ---@return KeyEvent
 function M.peek(index)
 	return history.peek(index)
+end
+
+M.on_key_test = function(key)
+	on_key_event(key)
+end
+
+function M.setup(opts)
+	opts = opts or {}
+	time = opts.time or default_time
+	for _, hist in ipairs(event_hist) do
+		hist.time = time()
+	end
 end
 
 vim.on_key(on_key)

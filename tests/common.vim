@@ -6,9 +6,9 @@ set nowritebackup
 set noundofile
 set shortmess+=A
 
-let s:root = $KIBI2_ROOT
+let s:root = $KIBI2_REPO_ROOT
 execute 'set rtp+=' . s:root
-let g:tirenvi_test_mode = 1
+let g:kibi2_test_mode = 1
 filetype plugin indent on
 
 lua << EOF
@@ -23,8 +23,18 @@ local opts = {
 		probe = true,
 		output = "print",
 	},
+  table = {
+		wrap_mode = "nowrap",
+	},
 }
 require("keyevent").setup(opts)
+KeyEvent = require("keyevent.keyevent")
+Os = require("keyevent.os")
+KeyEvent.setup({
+  time = function()
+    return 123
+  end
+})
 EOF
 
 " ----------------------------

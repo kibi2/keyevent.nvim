@@ -12,7 +12,7 @@ local function emit(msg, level)
 		return
 	end
 	-- In test mode, avoid scheduling for deterministic behavior.
-	if vim.g.tirenvi_test_mode then
+	if vim.g.kibi2_test_mode then
 		if msg ~= "" then
 			print(msg)
 		end
