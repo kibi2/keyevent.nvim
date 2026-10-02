@@ -19,6 +19,11 @@ local function get_prefs(path)
 end
 
 local function find_tool(name)
+	vim.notify(
+		"OS "
+			.. "runtime paths = "
+			.. vim.inspect(vim.api.nvim_list_runtime_paths())
+	)
 	for _, root in ipairs(vim.api.nvim_list_runtime_paths()) do
 		local path = root .. "/tools/" .. name
 		if vim.uv.fs_stat(path) then
@@ -34,6 +39,8 @@ local function get_system_prefs()
 		"linux/keyevent-x11",
 	}
 	for _, name in ipairs(tools) do
+		local path = find_tool(name)
+		vim.notify("OS " .. name .. " => " .. tostring(path))
 		local prefs = get_prefs(find_tool(name))
 		if prefs then
 			return prefs
