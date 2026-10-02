@@ -10,6 +10,6 @@ return {
     ".*/nvim/runtime/.*",
     ".*/.luarocks/.*",
     ".*/site/pack/.*",
-    "run$",
+    ".*/tests/cases/.*",
   },
 }

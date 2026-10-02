@@ -35,6 +35,8 @@ KeyEvent.setup({
     return 123
   end
 })
+local root = assert(os.getenv("KIBI2_REPO_ROOT"))
+package.path = root .. "/tests/?.lua;" .. package.path
 EOF
 
 " ----------------------------
