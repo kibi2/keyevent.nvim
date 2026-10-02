@@ -1,6 +1,6 @@
 source $KIBI2_REPO_ROOT/tests/common.vim
 
-" ===== BASIC =====
+" ===== diagnosis =====
 new
 
 CASE diagnosis

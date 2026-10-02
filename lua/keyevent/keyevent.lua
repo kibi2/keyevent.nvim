@@ -50,7 +50,7 @@ local callbacks = {}
 ---@field source KeyEventSource
 ---@field bufnr integer
 ---@field type KeyEventType
----@field ng_repeat boolean
+---@field ng_repeat integer
 ---@field key string
 ---@field prev_key string
 ---@field meta integer
@@ -74,7 +74,7 @@ local START_EVENT = {
 	source = M.KEY_EVENT_SOURCE.ON_KEY,
 	bufnr = -1,
 	type = M.KEY_EVENT_TYPE.CLICK,
-	ng_repeat = false,
+	ng_repeat = 0,
 	key = "",
 	prev_key = "",
 	meta = 0,
@@ -176,6 +176,17 @@ local function transition(event)
 	end
 end
 
+---@param event KeyEvent
+local function set_ng_repeat(event)
+	if not M.is_same_key(event) then
+		event.ng_repeat = 0
+	elseif threshold.is_repeat(event.interval) then
+		event.ng_repeat = event.ng_repeat + 1
+	else
+		event.ng_repeat = 0
+	end
+end
+
 ---@param prev_event KeyEvent
 ---@param event KeyEvent
 local function process_normal(prev_event, event)
@@ -185,7 +196,7 @@ local function process_normal(prev_event, event)
 		event.type = M.KEY_EVENT_TYPE.CLICK
 		event.nh = 0
 	end
-	event.ng_repeat = threshold.is_repeat(event.interval)
+	set_ng_repeat(event)
 	if prev_event.type == M.KEY_EVENT_TYPE.REPEAT then
 		event.nt = 1
 	elseif not M.is_same_key(event) then
@@ -203,7 +214,7 @@ end
 ---@param event KeyEvent
 local function process_hold(prev_event, event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
-	event.ng_repeat = false
+	event.ng_repeat = 0
 	event.hold_start = prev_event.time
 	event.nr = 1
 	event.nh = event.nh + 1
@@ -212,7 +223,7 @@ end
 ---@param event KeyEvent
 local function process_repeat(event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
-	event.ng_repeat = false
+	event.ng_repeat = 0
 	event.nr = event.nr + 1
 end
 
@@ -398,10 +409,16 @@ end
 ---@param event KeyEvent
 ---@return string
 function M.to_string(event)
+	local ng_repeat
+	if event.ng_repeat == 0 then
+		ng_repeat = ""
+	else
+		ng_repeat = event.ng_repeat .. "-"
+	end
 	return string.format(
 		"%s %-6s (%d %d %2d) %3s (%3d %d) %s",
 		event.source,
-		(event.ng_repeat and "NG " or "") .. event.type,
+		ng_repeat .. event.type,
 		event.nt,
 		event.nh,
 		event.nr,
