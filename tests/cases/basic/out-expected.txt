@@ -2,32 +2,32 @@
 === MESSAGE ===
 --- CASE : tan tan ta ta tan ---
 PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (2000 0) j
-onk map repeat (1 1  1)   j (520 0) j↻
-MAP map repeat (1 1  1)   j (520 0) j↻
-onk onk repeat (1 1  2)   j (170 0) j↻
-onk onk repeat (1 1  3)   j (130 0) j↻
+onk onk click  (1 0  0)   j (900 0) j
+onk map repeat (1 1  1)   j (500 0) j↻
+MAP map repeat (1 1  1)   j (500 0) j↻
+onk onk repeat (1 1  2)   j (150 0) j↻
+onk onk repeat (1 1  3)   j (150 0) j↻
 onk onk repeat (1 1  4)   j (150 0) j↻
 onk onk tap    (1 1  0)   j (300 0) j↻j
 onk onk repeat (1 2  1)   j (500 0) j↻j↻
 onk onk repeat (1 2  2)   j (150 0) j↻j↻
-onk onk tap    (1 2  0)   j (280 0) j↻j↻j
-onk onk tap    (2 2  0)   j (320 0) j↻j↻jj
+onk onk tap    (1 2  0)   j (300 0) j↻j↻j
+onk onk tap    (2 2  0)   j (300 0) j↻j↻jj
 onk onk tap    (3 2  0)   j (300 0) j↻j↻jjj
-onk onk repeat (3 3  1)   j (480 0) j↻j↻jjj↻
+onk onk repeat (3 3  1)   j (500 0) j↻j↻jjj↻
 onk onk repeat (3 3  2)   j (150 0) j↻j↻jjj↻
-hold_time = 480 + 130 =  630
+hold_time = 500 + 150 =  650
 
 
 --- CASE : tan tan ta ta tan (meta) ---
 PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (2000 0) j
+onk onk click  (1 0  0)   j (900 0) j
 onk map repeat (1 1  1) M-j (520 0) j↻
 MAP map repeat (1 1  1) M-j (520 0) j↻
 onk onk repeat (1 1  2) S-j (170 0) j↻
 onk onk repeat (1 1  3) C-j (130 0) j↻
 onk onk repeat (1 1  4) A-j (150 0) j↻
-onk onk tap    (1 1  0) D-j (300 0) j↻<D-j>
+onk onk tap    (1 1  0) D-j (280 0) j↻<D-j>
 onk onk repeat (1 2  1) D-j (500 0) j↻<D-j>↻
 onk onk repeat (1 2  2) T-j (150 0) j↻<D-j>↻
 onk onk tap    (1 2  0) T-j (280 0) j↻<D-j>↻<T-j>
@@ -35,26 +35,26 @@ onk onk tap    (2 2  0)   j (320 0) j↻<D-j>↻<T-j>j
 onk onk tap    (3 2  0) S-j (300 0) j↻<D-j>↻<T-j>j<S-j>
 onk onk repeat (3 3  1) T-j (480 0) j↻<D-j>↻<T-j>j<S-j>↻
 onk onk repeat (3 3  2)   j (150 0) j↻<D-j>↻<T-j>j<S-j>↻
-onk onk click  (1 0  0)   k (3000 0) k
+onk onk click  (1 0  0)   k (950 0) k
 
 
 --- CASE : tan tan ta ta tan (diff key) ---
 PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   x (2000 0) x
-onk map repeat (1 1  1)   x (520 0) x↻
-MAP map repeat (1 1  1)   x (520 0) x↻
-onk onk repeat (1 1  2)   x (170 0) x↻
-onk onk repeat (1 1  3)   x (130 0) x↻
+onk onk click  (1 0  0)   x (900 0) x
+onk map repeat (1 1  1)   x (500 0) x↻
+MAP map repeat (1 1  1)   x (500 0) x↻
+onk onk repeat (1 1  2)   x (150 0) x↻
+onk onk repeat (1 1  3)   x (150 0) x↻
 onk onk repeat (1 1  4)   x (150 0) x↻
 onk onk tap    (1 1  0)   h (300 0) x↻h
 onk onk repeat (1 2  1)   h (500 0) x↻h↻
 onk onk repeat (1 2  2)   h (150 0) x↻h↻
-onk onk tap    (1 2  0)   w (280 0) x↻h↻w
-onk onk tap    (1 2  0)   e (320 0) x↻h↻we
+onk onk tap    (1 2  0)   w (300 0) x↻h↻w
+onk onk tap    (1 2  0)   e (300 0) x↻h↻we
 onk onk tap    (1 2  0)   j (300 0) x↻h↻wej
-onk onk repeat (1 3  1)   j (480 0) x↻h↻wej↻
+onk onk repeat (1 3  1)   j (500 0) x↻h↻wej↻
 onk onk repeat (1 3  2)   j (150 0) x↻h↻wej↻
-onk onk click  (1 0  0)   k (3000 0) k
+onk onk click  (1 0  0)   k (900 0) k
  
 --- CASE 7: OS prefs ---
 500 150

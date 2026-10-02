@@ -41,4 +41,10 @@ KeyEvent.on_event(function(event)
 	debug_event("onk", event)
 end)
 
+CLICK = 900
+TAP = 300
+HOLD = 500
+REPEAT = 150
+DELTA = 20
+
 return M
