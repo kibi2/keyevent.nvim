@@ -86,8 +86,8 @@ local START_EVENT = {
 	nh = 0,
 	hold_start = 0,
 }
----@type KeyEvent[]
-local event_hist = { START_EVENT, START_EVENT }
+---@type KeyEvent
+local prev_event = START_EVENT
 ---@type KeyEventState
 local state = STATE.NORMAL
 local repeat_timer = vim.loop.new_timer()
@@ -98,9 +98,9 @@ local function emit(event)
 		return
 	end
 	local event_break
-	if event.bufnr ~= event_hist[2].bufnr and event_hist[2].bufnr ~= -1 then
+	if event.bufnr ~= prev_event.bufnr and prev_event.bufnr ~= -1 then
 		log.watch(event.source, "emit:BREAK")
-		event_break = vim.deepcopy(event_hist[2])
+		event_break = vim.deepcopy(prev_event)
 		event_break.type = M.KEY_EVENT_TYPE.BREAK
 	end
 	for _, callback in ipairs(callbacks) do
@@ -133,11 +133,11 @@ local function start_repeat_timer()
 				return
 			end
 			state = STATE.NORMAL
-			local event = vim.deepcopy(event_hist[2])
+			local event = vim.deepcopy(prev_event)
 			event.source = M.KEY_EVENT_SOURCE.ON_KEY
 			event.type = M.KEY_EVENT_TYPE.REPEAT_END
 			event.time = time()
-			event.interval = event.time - event_hist[2].time
+			event.interval = event.time - prev_event.time
 			emit(event)
 		end)
 	)
@@ -187,9 +187,8 @@ local function set_ng_repeat(event)
 	end
 end
 
----@param prev_event KeyEvent
 ---@param event KeyEvent
-local function process_normal(prev_event, event)
+local function process_normal(event)
 	if threshold.is_tap(event.interval) then
 		event.type = M.KEY_EVENT_TYPE.TAP
 	else
@@ -210,9 +209,8 @@ local function process_normal(prev_event, event)
 	event.nr = 0
 end
 
----@param prev_event KeyEvent
 ---@param event KeyEvent
-local function process_hold(prev_event, event)
+local function process_hold(event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
 	event.ng_repeat = 0
 	event.hold_start = prev_event.time
@@ -227,14 +225,13 @@ local function process_repeat(event)
 	event.nr = event.nr + 1
 end
 
----@param prev_event KeyEvent
 ---@param event KeyEvent
-local function process_event(prev_event, event)
+local function process_event(event)
 	transition(event)
 	if state == STATE.NORMAL then
-		process_normal(prev_event, event)
+		process_normal(event)
 	elseif state == STATE.HOLD then
-		process_hold(prev_event, event)
+		process_hold(event)
 	else
 		process_repeat(event)
 	end
@@ -245,10 +242,9 @@ local function process_event(prev_event, event)
 	end
 end
 
----@param prev_event KeyEvent
 ---@param key_notation string
 ---@return KeyEvent
-local function get_event(prev_event, key_notation)
+local function get_event(key_notation)
 	local key, meta = M.parse(key_notation)
 	local event = vim.deepcopy(prev_event)
 	event.bufnr = vim.api.nvim_get_current_buf()
@@ -263,11 +259,8 @@ end
 
 ---@param event KeyEvent
 local function push(event)
-	local prev_event = history.peek()
-	if
-		event.type == M.KEY_EVENT_TYPE.REPEAT
-		and event.type == prev_event.type
-	then
+	local prev = history.peek()
+	if event.type == M.KEY_EVENT_TYPE.REPEAT and event.type == prev.type then
 		history.reset(vim.deepcopy(event))
 	else
 		history.push(vim.deepcopy(event))
@@ -278,22 +271,22 @@ end
 local function push_event(event)
 	push(vim.deepcopy(event))
 	emit(event)
-	event_hist[1] = event_hist[2]
-	event_hist[2] = vim.deepcopy(event)
+	prev_event = vim.deepcopy(event)
 end
 
 ---@param key string
 local function on_key_event(key)
-	if time() - event_hist[2].time <= vim.o.ttimeoutlen then
+	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
+	if is_dup then
 		if history.peek().key == "<Esc>" and #key == 1 then
 			history.peek().key = string.format("<A-%s>", key)
 			emit(history.peek())
 		end
 		return
 	end
-	local event = get_event(event_hist[2], key)
+	local event = get_event(key)
 	event.source = M.KEY_EVENT_SOURCE.ON_KEY
-	process_event(event_hist[2], event)
+	process_event(event)
 	push_event(event)
 end
 
@@ -432,17 +425,14 @@ end
 ---@param key_notation string
 ---@return KeyEvent
 function M.keymap_event(key_notation)
-	local time = time()
-	local prev_event = event_hist[2]
-	if time - prev_event.time <= vim.o.ttimeoutlen then
-		prev_event = event_hist[1]
+	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
+	if is_dup then
+		return prev_event
 	end
-	local event = get_event(prev_event, key_notation)
+	local event = get_event(key_notation)
 	event.source = M.KEY_EVENT_SOURCE.KEYMAP
-	process_event(prev_event, event)
-	if prev_event == event_hist[2] then
-		push_event(event)
-	end
+	process_event(event)
+	push_event(event)
 	return event
 end
 
@@ -522,9 +512,7 @@ end
 function M.setup(opts)
 	opts = opts or {}
 	time = opts.time or default_time
-	for _, hist in ipairs(event_hist) do
-		hist.time = time()
-	end
+	prev_event.time = time()
 end
 
 vim.on_key(on_key)
