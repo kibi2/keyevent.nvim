@@ -304,7 +304,7 @@ local function create_window()
 	vim.bo[buf].modifiable = false
 	local width = 64
 	local height = 35
-	local ui = vim.api.nvim_list_uis()[1]
+	local ui = vim.api.nvim_list_uis()[1] or { width = 80, height = 24 }
 	local row = math.floor((ui.height - height) / 2)
 	local col = math.floor((ui.width - width) / 2)
 	win = vim.api.nvim_open_win(buf, false, {

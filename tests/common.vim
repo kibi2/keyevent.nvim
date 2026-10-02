@@ -28,13 +28,13 @@ local opts = {
 	},
 }
 require("keyevent").setup(opts)
-KeyEvent = require("keyevent.keyevent")
-Os = require("keyevent.os")
-KeyEvent.setup({
-  time = function()
-    return 123
-  end
-})
+-- KeyEvent = require("keyevent.keyevent")
+-- Os = require("keyevent.os")
+-- KeyEvent.setup({
+  -- time = function()
+    -- return 123
+  -- end
+-- })
 local root = assert(os.getenv("KIBI2_REPO_ROOT"))
 package.path = root .. "/tests/?.lua;" .. package.path
 EOF
