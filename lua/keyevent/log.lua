@@ -12,7 +12,7 @@ local M = {}
 local levels = vim.log.levels
 
 local level_names = {}
-local PREFIX = "KEY"
+local PREFIX = "KB2"
 local uv = vim.loop
 local queue = {}
 local scheduled = false
@@ -177,6 +177,7 @@ api.nvim_set_hl(
 	{ fg = "#ffffff", bg = "#ff0000", bold = true }
 )
 api.nvim_set_hl(0, "TirLog_num", { fg = "#cc55cc", bold = true })
+api.nvim_set_hl(0, "Multi_Byte", { bg = "#664422", bold = true })
 
 ---@param bufnr number
 local function apply_log_highlight(bufnr)
@@ -186,6 +187,7 @@ local function apply_log_highlight(bufnr)
 	end
 	api.nvim_win_call(winid, function()
 		fn.clearmatches()
+		fn.matchadd("Multi_Byte", "[^\\x00-\\x7F]")
 		fn.matchadd("TirLog_Entry", "===")
 		--fn.matchadd("TirLog_Error", [[\[[0-9,]\+\]]])
 		fn.matchadd("TirLog_num", "\\[[0-9,]\\+\\]")
@@ -196,7 +198,7 @@ local function apply_log_highlight(bufnr)
 	end)
 end
 
-local aug = api.nvim_create_augroup("TirenviLogHL", { clear = true })
+local aug = api.nvim_create_augroup("Kbi2LogHL", { clear = true })
 ---@param bufnr number
 local function register_autocmds(bufnr)
 	api.nvim_create_autocmd("BufWinEnter", {
@@ -245,13 +247,13 @@ end
 
 local initialized = false
 local function flush_file(buf_string)
-	local file = config.log.file_name or "/tmp/tirenvi.log"
+	local file = config.log.file_name or "/tmp/kibi2.log"
 	if not initialized then
 		local fds = io.open(file, "w")
 		if fds then
 			fds:close()
 		else
-			error("tirenvi: failed to open log file: " .. file)
+			error("kibi2: failed to open log file: " .. file)
 		end
 		initialized = true
 	end

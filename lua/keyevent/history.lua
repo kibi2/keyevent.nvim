@@ -2,6 +2,12 @@ local log = require("keyevent.log")
 
 local M = {}
 
+---@class KeyEventHistory
+---@field events KeyEvent[]
+---@field head integer
+---@field size integer
+
+---@ypte KeyEventHistory
 local history = {
 	events = {},
 	head = 20,
@@ -34,6 +40,9 @@ end
 function M.peek(index)
 	index = index or 1
 	local ihistory = history.head - (index - 1)
+	if ihistory < 1 then
+		ihistory = ihistory + history.size
+	end
 	return get(ihistory)
 end
 

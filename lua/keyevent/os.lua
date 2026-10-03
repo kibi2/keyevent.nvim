@@ -31,7 +31,7 @@ local function get_system_prefs()
 	local tools = {
 		"macos/keyevent-macos",
 		"windows/keyevent-win.exe",
-		"linux/keyevent-x11",
+		"X11/keyevent-x11",
 	}
 	for _, name in ipairs(tools) do
 		local prefs = get_prefs(find_tool(name))
@@ -47,8 +47,8 @@ function M.setup()
 		M.delay = prefs.delay
 		M.interval = prefs.interval
 	end
-	log.debug("delay = " .. (M.delay or "nil"))
-	log.debug("interval = " .. (M.interval or "nil"))
+	log.watch("OS", "delay = " .. (M.delay or "nil"))
+	log.watch("OS", "interval = " .. (M.interval or "nil"))
 end
 
 return M

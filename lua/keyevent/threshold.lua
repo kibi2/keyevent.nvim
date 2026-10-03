@@ -19,7 +19,7 @@ end
 ---@return integer
 local function get_interval()
 	if config.threshold.interval then
-		return config.threshold.interval 
+		return config.threshold.interval
 	end
 	if os.interval then
 		return os.interval

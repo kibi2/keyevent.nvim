@@ -1,0 +1,8 @@
+--- os prefs ---
+=== MESSAGE ===
+ 
+--- CASE 6: OS prefs ---
+500 150
+
+=== DISPLAY ===
+

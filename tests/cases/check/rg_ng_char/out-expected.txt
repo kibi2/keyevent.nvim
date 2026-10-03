@@ -1,0 +1,2 @@
+/Users/ogawa/oss/keyevent.nvim/lua/keyevent/keyevent.lua:				note = string.format("↻")
+/Users/ogawa/oss/keyevent.nvim/lua/keyevent/log.lua:		name = "🟧PRB"
