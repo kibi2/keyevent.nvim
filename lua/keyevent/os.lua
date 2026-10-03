@@ -19,6 +19,7 @@ local function get_prefs2(path)
 end
 
 local function get_prefs(path)
+	vim.notify("get_prefs" .. path .. " found")
 	if not path then
 		return
 	end
@@ -57,7 +58,15 @@ end
 local function find_tool(name)
 	for _, root in ipairs(vim.api.nvim_list_runtime_paths()) do
 		local path = root .. "/tools/" .. name
+		vim.notify(
+			"OS"
+				.. "check "
+				.. path
+				.. " => "
+				.. tostring(vim.uv.fs_stat(path) ~= nil)
+		)
 		if vim.uv.fs_stat(path) then
+			vim.notify("find_tool" .. path .. " found")
 			return path
 		end
 	end
