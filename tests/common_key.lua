@@ -1,4 +1,5 @@
 KeyEvent = require("keyevent.keyevent")
+Config = require("keyevent.config")
 Os = require("keyevent.os")
 local log = require("keyevent.log")
 
@@ -41,6 +42,11 @@ KeyEvent.setup({
 require("keyevent").on_event(function(event)
 	debug_event("onk", event)
 end)
+
+if not Config.threshold.delay then
+	Config.threshold.delay = 500
+	Config.threshold.interval = 150
+end
 
 CLICK = 900
 TAP = 300
