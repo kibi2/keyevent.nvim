@@ -1,5 +1,11 @@
 # keyevent.nvim
 
+[![CI](https://github.com/kibi2/keyevent.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/kibi2/keyevent.nvim/actions)
+[![codecov](https://codecov.io/gh/kibi2/keyevent.nvim/branch/main/graph/badge.svg)](https://codecov.io/gh/kibi2/keyevent.nvim)
+![GitHub release](https://img.shields.io/github/v/release/kibi2/keyevent.nvim)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Neovim](https://img.shields.io/badge/Neovim-0.10+-57A143?logo=neovim)
+
 **Time-based key event detection for Neovim.**
 
 `keyevent.nvim` detects keyboard input events and classifies them according to the timing of consecutive key presses.
