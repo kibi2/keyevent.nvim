@@ -17,8 +17,6 @@ onk onk tap    (1 2  0) <Esc> (150 0) h↻k↻
 500 150
  
 --- CASE 38: NG command ---
-Error detected while processing command line..script /Users/ogawa/oss/keyevent.nvim/tests/cases/diagnosis/run.vim:
-line   39:
 Unknown KeyEvent command: diagnosisX
 
 === DISPLAY ===

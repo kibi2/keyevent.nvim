@@ -43,15 +43,15 @@ require("keyevent").on_event(function(event)
 	debug_event("onk", event)
 end)
 
-if not Config.threshold.delay then
-	Config.threshold.delay = 500
-	Config.threshold.interval = 150
-end
-
 CLICK = 900
 TAP = 300
 HOLD = 500
 REPEAT = 150
 DELTA = 20
+
+if not Config.threshold.delay then
+	Config.threshold.delay = HOLD
+	Config.threshold.interval = REPEAT
+end
 
 return M
