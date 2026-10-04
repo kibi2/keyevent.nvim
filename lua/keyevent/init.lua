@@ -7,8 +7,6 @@ local diagnosis = require("keyevent.diagnosis")
 
 local M = {}
 
-local GROUP_NAME = "keyevent"
-
 local function initialize()
 	config.setup({})
 	os.setup()
@@ -27,18 +25,6 @@ local function initialize()
 			return { "diagnosis" }
 		end,
 	})
-	local augroup = api.nvim_create_augroup(GROUP_NAME, { clear = true })
-	if vim.g.kibi2_test_mode == 1 then
-		local ok, luacov = pcall(require, "luacov")
-		if ok then
-			api.nvim_create_autocmd("VimLeavePre", {
-				group = augroup,
-				callback = function(args)
-					luacov.save_stats()
-				end,
-			})
-		end
-	end
 end
 
 ---@param opts? table
