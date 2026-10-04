@@ -109,7 +109,7 @@ local function emit(event)
 		end
 		callback(event)
 	end
-	log.watch(event.source, "emit:" .. M.to_string(event))
+	-- log.watch(event.source, "emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()
@@ -426,10 +426,10 @@ end
 ---@return KeyEvent
 function M.keymap_event(key_notation)
 	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
-	if is_dup then
+	local event = get_event(key_notation)
+	if is_dup and M.is_same_key(event) then
 		return prev_event
 	end
-	local event = get_event(key_notation)
 	event.source = M.KEY_EVENT_SOURCE.KEYMAP
 	process_event(event)
 	push_event(event)
