@@ -56,10 +56,10 @@ function M.on_event(event)
 		M.interval = math.floor(ave)
 		if delay_hist then
 			M.delay = math.floor(Histgram.median_average(delay_hist))
-			log.debug("\n" .. Histgram.to_string(delay_hist))
-			log.debug("\n" .. Histgram.to_string(hist))
+			-- log.debug("\n" .. Histgram.to_string(delay_hist))
+			-- log.debug("\n" .. Histgram.to_string(hist))
 		end
-		log.debug({ M.delya, M.interval })
+		-- log.debug({ M.delya, M.interval })
 	end
 	prev_interval[1] = prev_interval[2]
 	prev_interval[2] = event.interval

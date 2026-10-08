@@ -109,7 +109,7 @@ local function emit(event)
 		end
 		callback(event)
 	end
-	log.watch(event.source, "emit:" .. M.to_string(event))
+	-- log.watch(event.source, "emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()
@@ -143,6 +143,14 @@ local function start_repeat_timer()
 	)
 end
 
+---@param event KeyEvent
+---@param new_state KeyEventState
+local function transition(event, new_state)
+	if state ~= new_state then
+		state = new_state
+	end
+end
+
 -- EVENT:
 --  D:is different key
 --  H:is_hold, R: is_repeat, T:is_tap
@@ -152,24 +160,22 @@ end
 --  | HOLD | R -> REPEAT<br>TCD -> NORMAL | H |
 --  | REPEAT | TCD(H) -> NORMAL | R |
 ---@param event KeyEvent
-local function transition(event)
+local function check_trans(event)
 	if not M.is_same_key(event) then --  D:is different key
-		state = STATE.NORMAL
-		return
-	end
-	if state == STATE.NORMAL then
+		transition(event, STATE.NORMAL)
+	elseif state == STATE.NORMAL then
 		if threshold.is_hold(event.interval) then
-			state = STATE.HOLD
+			transition(event, STATE.HOLD)
 		end
 	elseif state == STATE.HOLD then
 		if threshold.is_repeat(event.interval) then
-			state = STATE.REPEAT
+			transition(event, STATE.REPEAT)
 		elseif not threshold.is_hold(event.interval) then
-			state = STATE.NORMAL
+			transition(event, STATE.NORMAL)
 		end
 	elseif state == STATE.REPEAT then
 		if not threshold.is_repeat(event.interval) then
-			state = STATE.NORMAL
+			transition(event, STATE.NORMAL)
 		end
 	else
 		error("invalid state: " .. tostring(state))
@@ -182,13 +188,15 @@ local function set_ng_repeat(event)
 		event.ng_repeat = 0
 	elseif threshold.is_repeat(event.interval) then
 		event.ng_repeat = event.ng_repeat + 1
+	elseif threshold.is_hold(event.interval) then
+		event.ng_repeat = event.ng_repeat + 1
 	else
 		event.ng_repeat = 0
 	end
 end
 
 ---@param event KeyEvent
-local function process_normal(event)
+local function entry_normal(event)
 	if threshold.is_tap(event.interval) then
 		event.type = M.KEY_EVENT_TYPE.TAP
 	else
@@ -198,9 +206,7 @@ local function process_normal(event)
 	set_ng_repeat(event)
 	if prev_event.type == M.KEY_EVENT_TYPE.REPEAT then
 		event.nt = 1
-	elseif not M.is_same_key(event) then
-		event.nt = 1
-	elseif event.type == M.KEY_EVENT_TYPE.TAP then
+	elseif M.is_same_key(event) and event.type == M.KEY_EVENT_TYPE.TAP then
 		event.nt = event.nt + 1
 	else
 		event.nt = 1
@@ -210,36 +216,45 @@ local function process_normal(event)
 end
 
 ---@param event KeyEvent
-local function process_hold(event)
+local function entry_hold(event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
-	event.ng_repeat = 0
+	if prev_event.type == M.KEY_EVENT_TYPE.REPEAT and prev_event.nr == 1 then
+		event.ng_repeat = event.ng_repeat + 1
+	else
+		event.nh = event.nh + 1
+		event.ng_repeat = 0
+	end
 	event.hold_start = prev_event.time
 	event.nr = 1
-	event.nh = event.nh + 1
 end
 
 ---@param event KeyEvent
-local function process_repeat(event)
+local function entry_repeat(event)
 	event.type = M.KEY_EVENT_TYPE.REPEAT
 	event.ng_repeat = 0
 	event.nr = event.nr + 1
 end
 
 ---@param event KeyEvent
-local function process_event(event)
-	transition(event)
+local function entry(event)
 	if state == STATE.NORMAL then
-		process_normal(event)
+		entry_normal(event)
 	elseif state == STATE.HOLD then
-		process_hold(event)
+		entry_hold(event)
 	else
-		process_repeat(event)
+		entry_repeat(event)
 	end
 	if event.type == M.KEY_EVENT_TYPE.REPEAT then
 		start_repeat_timer()
 	else
 		stop_repeat_timer()
 	end
+end
+
+---@param event KeyEvent
+local function process_event(event)
+	check_trans(event)
+	entry(event)
 end
 
 ---@param key_notation string
@@ -426,10 +441,10 @@ end
 ---@return KeyEvent
 function M.keymap_event(key_notation)
 	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
-	if is_dup then
+	local event = get_event(key_notation)
+	if is_dup and M.is_same_key(event) then
 		return prev_event
 	end
-	local event = get_event(key_notation)
 	event.source = M.KEY_EVENT_SOURCE.KEYMAP
 	process_event(event)
 	push_event(event)
