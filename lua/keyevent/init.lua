@@ -1,6 +1,3 @@
-local api = vim.api -- Neovim
-
-local logger_config = require("kibi2.logger.config")
 local config = require("keyevent.config")
 local os = require("keyevent.os")
 local KeyEvent = require("keyevent.keyevent")
@@ -9,7 +6,6 @@ local diagnosis = require("keyevent.diagnosis")
 local M = {}
 
 local function initialize()
-	logger_config.setup({})
 	config.setup({})
 	os.setup()
 	vim.api.nvim_create_user_command("KeyEvent", function(opts)
