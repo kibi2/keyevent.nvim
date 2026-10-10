@@ -5,8 +5,22 @@ if not ok then
 		debug = function() end,
 		info = function() end,
 		warn = function() end,
-		error = function(...)
-			local message = table.concat(vim.tbl_map(tostring, { ... }), " ")
+		error = function(fmt, ...)
+			local args = { ... }
+			local message
+			if type(fmt) == "string" or #args == 0 then
+				local ok, result = pcall(function()
+					return string.format(fmt, unpack(args))
+				end)
+				if ok then
+					message = result
+				end
+			end
+			if not message then
+				local args = { fmt, ... }
+				local parts = vim.tbl_map(tostring, args)
+				message = table.concat(parts, " ")
+			end
 			vim.schedule(function()
 				vim.notify(message, vim.log.levels.ERROR)
 			end)
