@@ -1,10 +1,34 @@
-local logger = require("kibi2.logger.logger")
+local ok, logger = pcall(require, "kibi2.logger.logger")
+
+if not ok then
+	logger = {
+		debug = function() end,
+		info = function() end,
+		warn = function() end,
+		error = function(...)
+			local message = table.concat(vim.tbl_map(tostring, { ... }), " ")
+			vim.schedule(function()
+				vim.notify(message, vim.log.levels.ERROR)
+			end)
+		end,
+		probe = function() end,
+		watch = function() end,
+		is_debug = function()
+			return false
+		end,
+		assert = function(condition, message, ...)
+			if not condition then
+				error(string.format(message, ...), 2)
+			end
+			return condition
+		end,
+	}
+end
 
 -- =============================================================================
 
 local M = {}
 
---#endregion
 -- =============================================================================
 -- Public API
 
