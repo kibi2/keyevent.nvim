@@ -1,0 +1,7 @@
+ 
+--- CASE 6: logger ---
+false
+Error detected while processing command line..script /tests/cases/logger/no_logger_error/run.vim[22]..function Snapshot:
+line    1:
+log error 1 2 three
+1 2 three

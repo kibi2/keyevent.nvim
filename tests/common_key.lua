@@ -1,7 +1,6 @@
 KeyEvent = require("keyevent.keyevent")
 Config = require("keyevent.config")
 Os = require("keyevent.os")
-local log = require("keyevent.log")
 
 local M = {}
 
