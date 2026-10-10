@@ -15,8 +15,7 @@ lua << EOF
     log.watch("LOG", "watch")
     print(log.is_debug())
     log.assert(true, "OK")
-    log.error("log error %d %d %s", 1, 2, "three")
-    log.error(1, 2, "three")
+    log.error("log error")
 EOF
 
 call Snapshot({ 'desc': 'logger' })

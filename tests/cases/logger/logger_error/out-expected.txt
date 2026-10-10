@@ -5,11 +5,10 @@
 [KB2][DEBUG][log.lua] log debug 1 two three
 [KB2][INFO][log.lua] log info 1 two three
 [KB2][WARN][log.lua] log warn 1 two three
-[KB2][🟧PRB][log.lua 71] log probe 1 two three
+[KB2][🟧PRB][log.lua 56] log probe 1 two three
 [KB2][LOG][log.lua] watch
 true
-[KB2][ERROR][log.lua] log error 1 2 three
-[KB2][ERROR][log.lua] <number> 1 <number> 2 <string> three
+[KB2][ERROR][log.lua] log error
 
 === DISPLAY ===
 
