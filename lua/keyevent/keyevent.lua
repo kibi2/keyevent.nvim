@@ -109,7 +109,7 @@ local function emit(event)
 		end
 		callback(event)
 	end
-	-- log.watch(event.source, "emit:" .. M.to_string(event))
+	log.watch(event.source, "emit:" .. M.to_string(event))
 end
 
 local function stop_repeat_timer()

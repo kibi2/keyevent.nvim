@@ -15,6 +15,7 @@ lua << EOF
     log.watch("LOG", "watch")
     print(log.is_debug())
     log.assert(true, "OK")
+    log.assert(false, "NG")
     log.error("log error")
 EOF
 

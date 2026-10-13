@@ -2,13 +2,13 @@
 === MESSAGE ===
  
 --- CASE 6: logger ---
-[KB2][DEBUG][log.lua] log debug 1 two three
-[KB2][INFO][log.lua] log info 1 two three
-[KB2][WARN][log.lua] log warn 1 two three
-[KB2][🟧PRB][log.lua 56] log probe 1 two three
-[KB2][LOG][log.lua] watch
+[KB2][DEBUG][[string ":lua"]] log debug 1 two three
+[KB2][INFO][[string ":lua"]] log info 1 two three
+[KB2][WARN][[string ":lua"]] log warn 1 two three
+[KB2][🟧PRB][[string ":lua"] 15] log probe 1 two three
+[KB2][LOG][[string ":lua"]] watch
 true
-[KB2][ERROR][log.lua] log error
+[KB2][ERROR][[string ":lua"]] log error
 
 === DISPLAY ===
 

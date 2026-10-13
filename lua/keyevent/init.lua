@@ -1,4 +1,5 @@
 local config = require("keyevent.config")
+local log = require("keyevent.log")
 local os = require("keyevent.os")
 local KeyEvent = require("keyevent.keyevent")
 local diagnosis = require("keyevent.diagnosis")
@@ -25,7 +26,7 @@ local function initialize()
 	})
 end
 
----@param opts? table
+---@param opts table<string, any>|nil
 function M.setup(opts)
 	config.setup(opts or {})
 end
