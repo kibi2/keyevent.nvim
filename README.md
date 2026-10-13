@@ -50,7 +50,7 @@ Using lazy.nvim:
 	"kibi2/keyevent.nvim",
 	config = function()
 		require("keyevent").setup({
-			interval = {
+			threshold = {
 				delta = 20,
 				tap = 500,
 			},
@@ -264,7 +264,7 @@ A configuration can override the timing values:
 
 ```lua
 require("keyevent").setup({
-	interval = {
+	threshold = {
 		delta = 20,
 		tap = 500,
 	},
