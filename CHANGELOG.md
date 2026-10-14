@@ -2,6 +2,10 @@
 
 ## [0.1.1] - TBD
 
+### Changed
+
+- Move logging to optional `logger.nvim`; logging is disabled by default.
+
 ### Fixed
 
 - Count `ng_repeat` when a hold interval follows a repeat interval.
