@@ -21,7 +21,7 @@ end
 
 ---	@param sequence KeyInfo[]
 function M.run_sequence(sequence)
-	print("PLC src type   (t h  r) key (itv h) seq")
+	print("PLC src type   key (t h  r) (itv h) seq")
 	for _, keyinfo in ipairs(sequence) do
 		M.advance(keyinfo.interval)
 		if keyinfo.keymap then
