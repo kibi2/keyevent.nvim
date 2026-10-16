@@ -200,7 +200,7 @@ local KeyEvent = require("keyevent.keyevent")
 
 require("keyevent").on_event(function()
 	if vim.fn.mode() == "i" then
-		if KeyEvent.keys(2) == "kj" then
+		if KeyEvent.keys(2, true) == "kj" then
 			local keys =
 				vim.api.nvim_replace_termcodes(
 					"<BS><BS><Esc>",

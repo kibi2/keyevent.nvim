@@ -23,5 +23,5 @@ local tan_tan_ta_ta_tann = {
 }
 
 common_key.run_sequence(tan_tan_ta_ta_tann)
-local events = KeyEvent.get_evcents(2)
+local events = KeyEvent.get_events(2)
 print("hold_time = 500 + 150 * 6 = ", KeyEvent.hold_time(events[1]))

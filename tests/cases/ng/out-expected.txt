@@ -4,154 +4,154 @@
 --- CASE 6: : tan click NG ---
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk repeat (2 1  3)   j (150 0) jj↻
-onk onk repeat (2 1  4)   j (150 0) jj↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk repeat   j (2 1  3) (150 0) jj↻
+onk onk repeat   j (2 1  4) (150 0) jj↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk click  (1 0  0)   j (900 0) j
-onk onk repeat (1 1  1)   j (500 0) j↻
-onk onk repeat (1 1  2)   j (150 0) j↻
-onk onk repeat (1 1  3)   j (150 0) j↻
-onk onk repeat (1 1  4)   j (150 0) j↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk click    j (1 0  0) (900 0) j
+onk onk repeat   j (1 1  1) (500 0) j↻
+onk onk repeat   j (1 1  2) (150 0) j↻
+onk onk repeat   j (1 1  3) (150 0) j↻
+onk onk repeat   j (1 1  4) (150 0) j↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk click  (1 0  0)   j (900 0) j
-onk onk 1-tap  (2 0  0)   j (150 0) jj
-onk onk 2-tap  (3 0  0)   j (150 0) jjj
-onk onk 3-tap  (4 0  0)   j (150 0) jjjj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk click    j (1 0  0) (900 0) j
+onk onk 1-tap    j (2 0  0) (150 0) jj
+onk onk 2-tap    j (3 0  0) (150 0) jjj
+onk onk 3-tap    j (4 0  0) (150 0) jjjj
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk click  (1 0  0)   j (900 0) j
-onk onk 1-tap  (2 0  0)   j (150 0) jj
-onk onk 2-tap  (3 0  0)   j (150 0) jjj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk click    j (1 0  0) (900 0) j
+onk onk 1-tap    j (2 0  0) (150 0) jj
+onk onk 2-tap    j (3 0  0) (150 0) jjj
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk click  (1 0  0)   j (900 0) j
-onk onk 1-tap  (2 0  0)   j (150 0) jj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk click    j (1 0  0) (900 0) j
+onk onk 1-tap    j (2 0  0) (150 0) jj
  
 --- CASE 9: : tan hold NG ---
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk repeat (2 1  3)   j (150 0) jj↻
-onk onk repeat (2 1  4)   j (150 0) jj↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk repeat   j (2 1  3) (150 0) jj↻
+onk onk repeat   j (2 1  4) (150 0) jj↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk repeat (1 1  1)   j (500 0) j↻
-onk onk 1-repeat (1 1  1)   j (500 0) j↻
-onk onk repeat (1 1  2)   j (150 0) j↻
-onk onk repeat (1 1  3)   j (150 0) j↻
-onk onk repeat (1 1  4)   j (150 0) j↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk repeat   j (1 1  1) (500 0) j↻
+onk onk 1-repeat   j (1 1  1) (500 0) j↻
+onk onk repeat   j (1 1  2) (150 0) j↻
+onk onk repeat   j (1 1  3) (150 0) j↻
+onk onk repeat   j (1 1  4) (150 0) j↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk 1-repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk repeat (2 1  3)   j (150 0) jj↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk 1-repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk repeat   j (2 1  3) (150 0) jj↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk 1-tap  (1 1  0)   j (500 0) jj↻j
-onk onk 2-tap  (2 1  0)   j (150 0) jj↻jj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk 1-tap    j (1 1  0) (500 0) jj↻j
+onk onk 2-tap    j (2 1  0) (150 0) jj↻jj
  
 --- CASE 12: : tan repeat NG ---
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk repeat (2 1  3)   j (150 0) jj↻
-onk onk repeat (2 1  4)   j (150 0) jj↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk repeat   j (2 1  3) (150 0) jj↻
+onk onk repeat   j (2 1  4) (150 0) jj↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk 1-tap  (2 0  0)   j (150 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk repeat (2 1  3)   j (150 0) jj↻
-onk onk repeat (2 1  4)   j (150 0) jj↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk 1-tap    j (2 0  0) (150 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk repeat   j (2 1  3) (150 0) jj↻
+onk onk repeat   j (2 1  4) (150 0) jj↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk 1-tap  (3 0  0)   j (150 0) jjj
-onk onk 2-tap  (4 0  0)   j (150 0) jjjj
-onk onk 3-tap  (5 0  0)   j (150 0) jjjjj
-onk onk 4-tap  (6 0  0)   j (150 0) jjjjjj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk 1-tap    j (3 0  0) (150 0) jjj
+onk onk 2-tap    j (4 0  0) (150 0) jjjj
+onk onk 3-tap    j (5 0  0) (150 0) jjjjj
+onk onk 4-tap    j (6 0  0) (150 0) jjjjjj
  
 --- CASE 15: : tan tap NG ---
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk repeat (2 1  3)   j (150 0) jj↻
-onk onk repeat (2 1  4)   j (150 0) jj↻
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk repeat   j (2 1  3) (150 0) jj↻
+onk onk repeat   j (2 1  4) (150 0) jj↻
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk tap    (3 0  0)   j (300 0) jjj
-onk onk 1-tap  (4 0  0)   j (150 0) jjjj
-onk onk 2-tap  (5 0  0)   j (150 0) jjjjj
-onk onk 3-tap  (6 0  0)   j (150 0) jjjjjj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk tap      j (3 0  0) (300 0) jjj
+onk onk 1-tap    j (4 0  0) (150 0) jjjj
+onk onk 2-tap    j (5 0  0) (150 0) jjjjj
+onk onk 3-tap    j (6 0  0) (150 0) jjjjjj
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk tap    (1 1  0)   j (300 0) jj↻j
-onk onk 1-tap  (2 1  0)   j (150 0) jj↻jj
-onk onk 2-tap  (3 1  0)   j (150 0) jj↻jjj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk tap      j (1 1  0) (300 0) jj↻j
+onk onk 1-tap    j (2 1  0) (150 0) jj↻jj
+onk onk 2-tap    j (3 1  0) (150 0) jj↻jjj
 
 
-PLC src type   (t h  r) key (itv h) seq
-onk onk click  (1 0  0)   j (900 0) j
-onk onk tap    (2 0  0)   j (300 0) jj
-onk onk repeat (2 1  1)   j (500 0) jj↻
-onk onk repeat (2 1  2)   j (150 0) jj↻
-onk onk tap    (1 1  0)   j (300 0) jj↻j
-onk onk 1-tap  (2 1  0)   j (150 0) jj↻jj
+PLC src type   key (t h  r) (itv h) seq
+onk onk click    j (1 0  0) (900 0) j
+onk onk tap      j (2 0  0) (300 0) jj
+onk onk repeat   j (2 1  1) (500 0) jj↻
+onk onk repeat   j (2 1  2) (150 0) jj↻
+onk onk tap      j (1 1  0) (300 0) jj↻j
+onk onk 1-tap    j (2 1  0) (150 0) jj↻jj
 
 === DISPLAY ===
 
