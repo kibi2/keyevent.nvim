@@ -300,9 +300,9 @@ All timing values are in milliseconds.
 
 ## Examples
 
-Two small examples are included with `keyevent.nvim`.
+Several examples are included with `keyevent.nvim`, ranging from basic event handling to more advanced key sequence matching.
 
-### `on_event`
+### `on_event()`
 
 Use `on_event()` to react to the generated event stream.
 
@@ -310,25 +310,37 @@ Use `on_event()` to react to the generated event stream.
 require("example.on_event")
 ```
 
-The example makes `kj` leave Insert mode.
+This example lets you leave Insert mode by typing `kj`.
 
-### `keymap_event`
+### `keymap_event()`
 
-Use `keymap_event()` from an expression mapping.
+Use `keymap_event()` in an expression mapping.
 
 ```lua
 require("example.keymap")
 ```
 
-The example uses `n` normally and shows the search history when `n` is held.
+This example behaves like the normal `n` command when `n` is tapped, and displays the search history when `n` is held.
+
+### `match()`
+
+Use `match()` to check whether recent key events match a specified sequence.
+
+```lua
+require("example.demo_scheme")
+```
+
+This example demonstrates how to use `match()` to control color scheme switching and a slideshow.
+
+To open the help window, press `H` in this sequence: click, tap, click, tap. Then follow the instructions displayed in the window.
 
 ### `rush.nvim`
 
-A slightly more complex example is [`rush.nvim`](https://github.com/kibi2/rush.nvim).
+A more advanced example is [`rush.nvim`](https://github.com/kibi2/rush.nvim).
 
-It changes the cursor movement distance depending on how a key is typed.
+It changes the cursor movement distance based on how a motion key is pressed.
 
-For example, the meaning of a motion key can change depending on whether it is tapped repeatedly or held.
+For example, repeated taps and holding a key can trigger different movement behaviors.
 
 ## Why?
 
