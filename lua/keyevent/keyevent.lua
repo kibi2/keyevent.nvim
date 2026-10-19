@@ -471,7 +471,7 @@ end
 ---@param event KeyEvent
 ---@return integer
 function M.hold_time(event)
-	if event.type ~= M.KEY_EVENT_TYPE.REPEAT then
+	if event.hold_start == 0 then
 		return 0
 	end
 	return event.time - event.hold_start

@@ -1,6 +1,13 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
 ## [0.1.1] - TBD
+
+### Added
+
+- Add a color scheme demo to demonstrate key event recognition and slideshow control.
+- Add `KeyEvent.match()` to match recent events against a sequence of key event specifications.
 
 ### Changed
 
