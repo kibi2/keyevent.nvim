@@ -46,6 +46,11 @@ local STATE = {
 
 local callbacks = {}
 
+---@class KeySeq
+---@field key string
+---@field meta integer
+---@field type KeyEventType
+
 ---@class KeyEvent
 ---@field source KeyEventSource
 ---@field bufnr integer
@@ -313,22 +318,6 @@ local function on_key(_, typed)
 	on_key_event(vim.fn.keytrans(typed))
 end
 
----@param key string
----@param meta integer
----@return string
-local function key_note(key, meta)
-	local note = M.unparse(key, meta)
-	if not note then
-		if meta == 0 then
-			return string.format("%s", key)
-		else
-			return string.format("%d-%s", meta, key)
-		end
-	else
-		return note:match("^<(.+)>$") or note
-	end
-end
-
 function M.meta()
 	return META
 end
@@ -414,6 +403,17 @@ function M.unparse(key, meta)
 	return "<" .. table.concat(chars, "-") .. ">"
 end
 
+---@param key string
+---@param meta integer
+---@return string
+local function meta_key(key, meta)
+	if meta == 0 then
+		return key
+	else
+		return string.format("%d-%s", meta, key)
+	end
+end
+
 ---@param event KeyEvent
 ---@return string
 function M.to_string(event)
@@ -424,16 +424,18 @@ function M.to_string(event)
 		ng_repeat = event.ng_repeat .. "-"
 	end
 	return string.format(
-		"%s %-6s (%d %d %2d) %3s (%3d %d) %s",
+		"%s %-6s %3s (%d %d %2d) (%3d %d) %s",
+		-- "%s %-6s (%d %d %2d) %3s (%3d %d) %s",
 		event.source,
 		ng_repeat .. event.type,
+		meta_key(event.key, event.meta),
 		event.nt,
 		event.nh,
 		event.nr,
-		key_note(event.key, event.meta),
+		-- key_note(event.key, event.meta),
 		event.interval,
 		math.floor(M.hold_time(event) / 1000),
-		M.keys(10)
+		M.keys(10, true)
 	)
 end
 
@@ -469,7 +471,7 @@ end
 ---@param event KeyEvent
 ---@return integer
 function M.hold_time(event)
-	if event.type ~= M.KEY_EVENT_TYPE.REPEAT then
+	if event.hold_start == 0 then
 		return 0
 	end
 	return event.time - event.hold_start
@@ -481,7 +483,7 @@ end
 
 ---@param count integer
 ---@return  KeyEvent[]
-function M.get_evcents(count)
+function M.get_events(count)
 	---@type KeyEvent[]
 	local seq = {}
 	for index = 1, count do
@@ -491,10 +493,12 @@ function M.get_evcents(count)
 end
 
 ---@param count integer
+---@param break_click boolean|nil
 ---@return  string
-function M.keys(count)
+function M.keys(count, break_click)
+	break_click = break_click == true
 	local seq = {}
-	for _, event in ipairs(M.get_evcents(count)) do
+	for _, event in ipairs(M.get_events(count)) do
 		if event.key then
 			local note = M.unparse(event.key, event.meta) or ""
 			note = note:match("^<(.)>$") or note
@@ -502,7 +506,7 @@ function M.keys(count)
 				note = string.format("↻")
 			end
 			seq[#seq + 1] = note
-			if event.type == M.KEY_EVENT_TYPE.CLICK then
+			if break_click and event.type == M.KEY_EVENT_TYPE.CLICK then
 				break
 			end
 		end
@@ -512,6 +516,26 @@ function M.keys(count)
 		reversed[#reversed + 1] = seq[index]
 	end
 	return table.concat(reversed)
+end
+
+---@param seqs KeySeq[]
+---@return boolean
+function M.match(seqs)
+	local events = M.get_events(#seqs)
+	for ievent = 1, #seqs do
+		local event = events[ievent] or {}
+		local seq = seqs[#seqs + 1 - ievent]
+		if seq.key and seq.key ~= event.key then
+			return false
+		end
+		if seq.meta and seq.meta ~= event.meta then
+			return false
+		end
+		if seq.type and seq.type ~= event.type then
+			return false
+		end
+	end
+	return true
 end
 
 ---@param index integer

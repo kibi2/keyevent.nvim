@@ -1,0 +1,27 @@
+--- example demo ---
+=== MESSAGE ===
+ 
+--- CASE 6: : example demo ---
+[DEBUG][run.lua] hoge
+PLC src type   key (t h  r) (itv h) seq
+onk onk click  1-h (1 0  0) (900 0) <S-h>
+onk onk tap    1-h (2 0  0) (300 0) <S-h><S-h>
+onk onk click  1-h (1 0  0) (900 0) <S-h>
+onk onk tap    1-h (2 0  0) (300 0) <S-h><S-h>
+[DEBUG][demo_scheme.lua] demo start
+onk onk click  1-h (1 0  0) (900 0) <S-h>
+[DEBUG][demo_scheme.lua] delek
+onk onk click  1-h (1 0  0) (900 0) <S-h>
+[DEBUG][demo_scheme.lua] desert
+onk onk 1-tap  1-h (2 0  0) (150 0) <S-h><S-h>
+onk onk click  1-l (1 0  0) (900 0) <S-l>
+onk onk click  1-h (1 0  0) (900 0) <S-h>
+[DEBUG][demo_scheme.lua] elflord
+onk onk tap    1-h (2 0  0) (300 0) <S-h><S-h>
+onk onk 1-tap  1-h (3 0  0) (150 0) <S-h><S-h><S-h>
+onk onk click  1-l (1 0  0) (900 0) <S-l>
+onk onk tap    <Esc> (1 0  0) (300 0) <S-l>
+[DEBUG][demo_scheme.lua] demo end
+
+=== DISPLAY ===
+
