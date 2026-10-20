@@ -251,13 +251,14 @@ local function restore_keymaps()
 end
 
 local function close()
+	local closing_win = win
+	win = nil
+	buf = nil
 	vim.schedule(function()
 		restore_keymaps()
-		if win and vim.api.nvim_win_is_valid(win) then
-			vim.api.nvim_win_close(win, true)
+		if closing_win and vim.api.nvim_win_is_valid(closing_win) then
+			vim.api.nvim_win_close(closing_win, true)
 		end
-		win = nil
-		buf = nil
 	end)
 end
 
@@ -297,6 +298,9 @@ end
 --------------------------------------------------
 
 local function create_window()
+	if win and vim.api.nvim_win_is_valid(win) then
+		return
+	end
 	buf = vim.api.nvim_create_buf(false, true)
 	vim.bo[buf].buftype = "nofile"
 	vim.bo[buf].bufhidden = "wipe"
