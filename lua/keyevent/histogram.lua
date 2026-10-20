@@ -2,18 +2,18 @@ local log = require("keyevent.log")
 
 local M = {}
 
----@class HistgramBin
+---@class HistogramBin
 ---@field count integer
 ---@field total number
----@field hist Histgram|nil
+---@field hist Histogram|nil
 
----@class Histgram
+---@class Histogram
 ---@field bin1 integer
 ---@field bin2 integer|nil
 ---@field count integer
----@field bins HistgramBin[]
+---@field bins HistogramBin[]
 
----@param hist Histgram
+---@param hist Histogram
 ---@return integer[]
 local function get_indexes(hist)
 	local indexes = {}
@@ -26,9 +26,9 @@ end
 
 ---@param bin1 integer
 ---@param bin2 integer|nil
----@return Histgram
+---@return Histogram
 function M.new(bin1, bin2)
-	---@type Histgram
+	---@type Histogram
 	return {
 		bin1 = bin1,
 		bin2 = bin2,
@@ -37,10 +37,10 @@ function M.new(bin1, bin2)
 	}
 end
 
----@param hist Histgram
+---@param hist Histogram
 ---@param index integer
 ---@param value integer
----@return HistgramBin
+---@return HistogramBin
 local function add_bin(hist, index, value)
 	local bin = hist.bins[index]
 	if not bin then
@@ -56,7 +56,7 @@ local function add_bin(hist, index, value)
 	return bin
 end
 
----@param hist Histgram|nil
+---@param hist Histogram|nil
 ---@param value1 integer|nil
 ---@param value2 integer|nil
 function M.add(hist, value1, value2)
@@ -70,9 +70,9 @@ function M.add(hist, value1, value2)
 	M.add(bin.hist, value2)
 end
 
----@param hist Histgram
+---@param hist Histogram
 ---@return number
----@return Histgram|nil
+---@return Histogram|nil
 function M.median_average(hist)
 	if hist.count == 0 then
 		return math.huge
@@ -89,7 +89,7 @@ function M.median_average(hist)
 	return math.huge
 end
 
----@param hist Histgram
+---@param hist Histogram
 ---@return number
 function M.mode_ratio(hist)
 	if hist.count == 0 then
@@ -103,9 +103,9 @@ function M.mode_ratio(hist)
 	return max_count / hist.count
 end
 
----@param hist Histgram
+---@param hist Histogram
 ---@return number
----@return Histgram|nil
+---@return Histogram|nil
 function M.mode_ave(hist)
 	if hist.count == 0 then
 		return math.huge
@@ -122,7 +122,7 @@ function M.mode_ave(hist)
 	return mode.total / mode.count
 end
 
----@param hist Histgram
+---@param hist Histogram
 ---@return string
 function M.to_string(hist)
 	local ave = {}

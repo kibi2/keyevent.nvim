@@ -29,6 +29,7 @@ local function show(interval)
 	if not buf or not vim.api.nvim_buf_is_valid(buf) then
 		return
 	end
+	local target_buf = buf
 	local lines = {
 		"===== keyevent.nvim: Color Scheme Demo =====",
 		"",
@@ -46,9 +47,9 @@ local function show(interval)
 		"Slideshow interval: " .. (interval and (interval .. " ms") or "N/A"),
 	}
 	vim.schedule(function()
-		vim.bo[buf].modifiable = true
-		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-		vim.bo[buf].modifiable = false
+		vim.bo[target_buf].modifiable = true
+		vim.api.nvim_buf_set_lines(target_buf, 0, -1, false, lines)
+		vim.bo[target_buf].modifiable = false
 	end)
 end
 

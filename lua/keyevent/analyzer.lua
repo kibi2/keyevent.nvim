@@ -1,4 +1,4 @@
-local Histgram = require("keyevent.histgram")
+local Histogram = require("keyevent.histogram")
 local log = require("keyevent.log")
 
 local M = {}
@@ -9,7 +9,7 @@ M.delay = 0
 M.interval = 0
 
 local prev_interval = { math.huge, math.huge }
-local hist = Histgram.new(5, 10)
+local hist = Histogram.new(5, 10)
 local repeat_count = 0
 local MAX_DELAY = 1050
 local delay = MAX_DELAY
@@ -32,12 +32,12 @@ local function is_repeat(event)
 	return neary_equal(event.interval, prev_interval[2])
 end
 
----@param histgram Histgram
+---@param histogram Histogram
 ---@param interval integer
 ---@param delay integer
-local function hist_add(histgram, interval, delay)
+local function hist_add(histogram, interval, delay)
 	if delay < MAX_DELAY then
-		Histgram.add(histgram, interval, delay)
+		Histogram.add(histogram, interval, delay)
 	end
 end
 
@@ -52,12 +52,12 @@ function M.on_event(event)
 		hist_add(hist, event.interval, delay)
 	elseif repeat_count ~= 0 then
 		repeat_count = 0
-		local ave, delay_hist = Histgram.median_average(hist)
+		local ave, delay_hist = Histogram.median_average(hist)
 		M.interval = math.floor(ave)
 		if delay_hist then
-			M.delay = math.floor(Histgram.median_average(delay_hist))
-			-- log.debug("\n" .. Histgram.to_string(delay_hist))
-			-- log.debug("\n" .. Histgram.to_string(hist))
+			M.delay = math.floor(Histogram.median_average(delay_hist))
+			-- log.debug("\n" .. Histogram.to_string(delay_hist))
+			-- log.debug("\n" .. Histogram.to_string(hist))
 		end
 		-- log.debug({ M.delya, M.interval })
 	end
