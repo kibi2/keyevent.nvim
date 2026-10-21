@@ -2,28 +2,60 @@ local KeyEvent = require("keyevent.keyevent")
 local log = require("keyevent.log")
 
 local META = KeyEvent.meta()
-local repeat_timer = vim.loop.new_timer()
-local scheme = nil
 
 local buf
 local win
+
+local function reverse_cat(array)
+	local reversed = {}
+	for index = #array, 1, -1 do
+		reversed[#reversed + 1] = array[index]
+	end
+	return table.concat(reversed)
+end
+
+local function get_char(key)
+	print(key)
+	if key == "<Space>" then
+		key = " "
+	end
+	return #key == 1 and key or " "
+end
+
+local function get_seq()
+	local types = {}
+	local keys = {}
+	local metas = {}
+	for _, event in ipairs(KeyEvent.get_events(30)) do
+		if event.key then
+			types[#types + 1] = (event.type --[[@as string]]):sub(1, 1)
+			keys[#keys + 1] = get_char(event.key)
+			metas[#metas + 1] = event.meta == 0 and " " or event.meta
+		end
+	end
+	return {
+		type = reverse_cat(types),
+		key = reverse_cat(keys),
+		meta = reverse_cat(metas),
+	}
+end
 
 local function show()
 	if not buf or not vim.api.nvim_buf_is_valid(buf) then
 		return
 	end
 	local target_buf = buf
-	local keys = KeyEvent.keys(10)
+	local seq = get_seq()
 	local lines = {
 		"===== keyevent.nvim: Sequence Demo =====",
 		"",
 		"HHH + H (click H, tap H, tap H, click H): Open this window",
-		"Esc: Exit demo",
+		"HHH + H: Exit demo",
 		"--------------------------------------------",
 		"",
-		"type ",
-		"key  " .. keys,
-		"meta ",
+		"type " .. seq.type,
+		"key  " .. seq.key,
+		"meta " .. seq.meta,
 		"-----",
 		"histogram",
 	}
@@ -75,9 +107,6 @@ local function close()
 	end)
 end
 
-local seqs_esc = {
-	{ key = "<Esc>" },
-}
 local seqs_tatatan_tan = {
 	{ key = "h", meta = META.S, type = KeyEvent.KEY_EVENT_TYPE.CLICK },
 	{ key = "h", meta = META.S, type = KeyEvent.KEY_EVENT_TYPE.TAP },
@@ -94,14 +123,12 @@ local function demo_end()
 end
 
 local function on_event(event)
-	if KeyEvent.match(seqs_esc) then
-		demo_end()
-		log.debug("demo end")
-		return
-	end
 	if KeyEvent.match(seqs_tatatan_tan) then
-		demo_start()
-		log.debug("demo start")
+		if not win then
+			demo_start()
+		else
+			demo_end()
+		end
 	end
 	show()
 end

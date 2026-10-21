@@ -1,6 +1,6 @@
 local analyzer = require("keyevent.analyzer")
 local threshold = require("keyevent.threshold")
-local history = require("keyevent.history")
+local ringbuffer = require("keyevent.ringbuffer")
 local bitflag = require("keyevent.bitflag")
 local log = require("keyevent.log")
 
@@ -33,7 +33,7 @@ M.KEY_EVENT_TYPE = {
 	CLICK = "click",
 	TAP = "tap",
 	REPEAT = "repeat",
-	REPEAT_END = "re_end",
+	REPEAT_END = "end",
 	BREAK = "BREAK", -- The key event sequence was interrupted by a buffer switch.
 }
 
@@ -96,6 +96,7 @@ local prev_event = START_EVENT
 ---@type KeyEventState
 local state = STATE.NORMAL
 local repeat_timer = vim.loop.new_timer()
+local history = ringbuffer.new(20)
 
 ---@param event KeyEvent|nil
 local function emit(event)
@@ -279,11 +280,11 @@ end
 
 ---@param event KeyEvent
 local function push(event)
-	local prev = history.peek()
+	local prev = ringbuffer.peek(history) or {}
 	if event.type == M.KEY_EVENT_TYPE.REPEAT and event.type == prev.type then
-		history.reset(vim.deepcopy(event))
+		ringbuffer.set(history, 1, vim.deepcopy(event))
 	else
-		history.push(vim.deepcopy(event))
+		ringbuffer.push(history, vim.deepcopy(event))
 	end
 end
 
@@ -298,9 +299,9 @@ end
 local function on_key_event(key)
 	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
 	if is_dup then
-		if history.peek().key == "<Esc>" and #key == 1 then
-			history.peek().key = string.format("<A-%s>", key)
-			emit(history.peek())
+		if ringbuffer.peek(history).key == "<Esc>" and #key == 1 then
+			ringbuffer.peek(history).key = string.format("<A-%s>", key)
+			emit(ringbuffer.peek(history))
 		end
 		return
 	end
@@ -487,7 +488,7 @@ function M.get_events(count)
 	---@type KeyEvent[]
 	local seq = {}
 	for index = 1, count do
-		seq[#seq + 1] = history.peek(index)
+		seq[#seq + 1] = ringbuffer.get(history, index)
 	end
 	return seq
 end
@@ -540,8 +541,8 @@ end
 
 ---@param index integer
 ---@return KeyEvent
-function M.peek(index)
-	return history.peek(index)
+function M.get(index)
+	return ringbuffer.get(history, index) or {}
 end
 
 M.on_key_test = function(key)
