@@ -1,1 +1,3 @@
-/Users/ogawa/oss/keyevent.nvim/lua/keyevent/keyevent.lua:				note = string.format("↻")
+/Users/ogawa/oss/keyevent.nvim/lua/example/demo_sequence.lua:		return "␣"
+/Users/ogawa/oss/keyevent.nvim/lua/example/demo_sequence.lua:		return "░"
+/Users/ogawa/oss/keyevent.nvim/lua/keyevent/keyevent.lua:				note = "↻"
