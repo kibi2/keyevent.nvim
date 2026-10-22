@@ -14,12 +14,16 @@ local function reverse_cat(array)
 	return table.concat(reversed)
 end
 
+---@param key string
+---@return string
 local function get_char(key)
-	print(key)
 	if key == "<Space>" then
-		key = " "
+		return "␣"
+	elseif #key > 1 then
+		return "░"
+	else
+		return key
 	end
-	return #key == 1 and key or " "
 end
 
 local function get_seq()

@@ -295,12 +295,28 @@ local function push_event(event)
 	prev_event = vim.deepcopy(event)
 end
 
+---@return boolean
+local function is_dup()
+	return time() - prev_event.time <= vim.o.ttimeoutlen
+end
+
+local function update_alt(key)
+	if is_dup() then
+		local prev = ringbuffer.peek(history)
+		if prev.key == "<Esc>" and #key == 1 then
+			prev.key = key
+			prev.meta = META.A
+			prev_event = vim.deepcopy(prev)
+			return true
+		end
+	end
+	return false
+end
+
 ---@param key string
 local function on_key_event(key)
-	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
-	if is_dup then
-		if ringbuffer.peek(history).key == "<Esc>" and #key == 1 then
-			ringbuffer.peek(history).key = string.format("<A-%s>", key)
+	if is_dup() then
+		if update_alt(key) then
 			emit(ringbuffer.peek(history))
 		end
 		return
@@ -426,14 +442,12 @@ function M.to_string(event)
 	end
 	return string.format(
 		"%s %-6s %3s (%d %d %2d) (%3d %d) %s",
-		-- "%s %-6s (%d %d %2d) %3s (%3d %d) %s",
 		event.source,
 		ng_repeat .. event.type,
 		meta_key(event.key, event.meta),
 		event.nt,
 		event.nh,
 		event.nr,
-		-- key_note(event.key, event.meta),
 		event.interval,
 		math.floor(M.hold_time(event) / 1000),
 		M.keys(10, true)
@@ -443,9 +457,12 @@ end
 ---@param key_notation string
 ---@return KeyEvent
 function M.keymap_event(key_notation)
-	local is_dup = time() - prev_event.time <= vim.o.ttimeoutlen
+	if update_alt(key_notation) then
+		emit(ringbuffer.peek(history))
+		return prev_event
+	end
 	local event = get_event(key_notation)
-	if is_dup and M.is_same_key(event) then
+	if is_dup() and M.is_same_key(event) then
 		return prev_event
 	end
 	event.source = M.KEY_EVENT_SOURCE.KEYMAP
