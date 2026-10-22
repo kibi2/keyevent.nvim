@@ -257,12 +257,6 @@ local function entry(event)
 	end
 end
 
----@param event KeyEvent
-local function process_event(event)
-	check_trans(event)
-	entry(event)
-end
-
 ---@param key_notation string
 ---@return KeyEvent
 local function get_event(key_notation)
@@ -295,11 +289,25 @@ local function push_event(event)
 	prev_event = vim.deepcopy(event)
 end
 
+---@param key string
+---@param source KeyEventSource
+---@return KeyEvent
+local function process_event(key, source)
+	local event = get_event(key)
+	event.source = source
+	check_trans(event)
+	entry(event)
+	push_event(event)
+	return event
+end
+
 ---@return boolean
 local function is_dup()
 	return time() - prev_event.time <= vim.o.ttimeoutlen
 end
 
+---@param key string
+---@return boolean
 local function update_alt(key)
 	if is_dup() then
 		local prev = ringbuffer.peek(history)
@@ -314,17 +322,33 @@ local function update_alt(key)
 end
 
 ---@param key string
-local function on_key_event(key)
-	if is_dup() then
-		if update_alt(key) then
-			emit(ringbuffer.peek(history))
-		end
-		return
+---@param meta integer
+---@return string
+local function meta_key(key, meta)
+	if meta == 0 then
+		return key
+	else
+		return string.format("%d-%s", meta, key)
 	end
-	local event = get_event(key)
-	event.source = M.KEY_EVENT_SOURCE.ON_KEY
-	process_event(event)
-	push_event(event)
+end
+
+---@param key string
+---@param source KeyEventSource
+---@return KeyEvent
+local function on_key_event(key, source)
+	if update_alt(key) then
+		emit(ringbuffer.peek(history))
+		return prev_event
+	end
+	if is_dup() then
+		if source == M.KEY_EVENT_SOURCE.ON_KEY then
+			return prev_event
+		end
+		if prev_event.key == key then
+			return prev_event
+		end
+	end
+	return process_event(key, source)
 end
 
 ---@param typed string
@@ -332,7 +356,7 @@ local function on_key(_, typed)
 	if #typed == 0 then
 		return
 	end
-	on_key_event(vim.fn.keytrans(typed))
+	on_key_event(vim.fn.keytrans(typed), M.KEY_EVENT_SOURCE.ON_KEY)
 end
 
 function M.meta()
@@ -420,17 +444,6 @@ function M.unparse(key, meta)
 	return "<" .. table.concat(chars, "-") .. ">"
 end
 
----@param key string
----@param meta integer
----@return string
-local function meta_key(key, meta)
-	if meta == 0 then
-		return key
-	else
-		return string.format("%d-%s", meta, key)
-	end
-end
-
 ---@param event KeyEvent
 ---@return string
 function M.to_string(event)
@@ -454,21 +467,10 @@ function M.to_string(event)
 	)
 end
 
----@param key_notation string
+---@param key string
 ---@return KeyEvent
-function M.keymap_event(key_notation)
-	if update_alt(key_notation) then
-		emit(ringbuffer.peek(history))
-		return prev_event
-	end
-	local event = get_event(key_notation)
-	if is_dup() and M.is_same_key(event) then
-		return prev_event
-	end
-	event.source = M.KEY_EVENT_SOURCE.KEYMAP
-	process_event(event)
-	push_event(event)
-	return event
+function M.keymap_event(key)
+	return on_key_event(key, M.KEY_EVENT_SOURCE.KEYMAP)
 end
 
 ---@param event KeyEvent
@@ -510,18 +512,16 @@ function M.get_events(count)
 	return seq
 end
 
----@param count integer
----@param break_click boolean|nil
----@return  string
 function M.keys(count, break_click)
 	break_click = break_click == true
 	local seq = {}
-	for _, event in ipairs(M.get_events(count)) do
+	for index = 1, count do
+		local event = ringbuffer.get(history, index) or {}
 		if event.key then
 			local note = M.unparse(event.key, event.meta) or ""
 			note = note:match("^<(.)>$") or note
 			if event.type == M.KEY_EVENT_TYPE.REPEAT then
-				note = string.format("↻")
+				note = "↻"
 			end
 			seq[#seq + 1] = note
 			if break_click and event.type == M.KEY_EVENT_TYPE.CLICK then
@@ -539,9 +539,9 @@ end
 ---@param seqs KeySeq[]
 ---@return boolean
 function M.match(seqs)
-	local events = M.get_events(#seqs)
 	for ievent = 1, #seqs do
-		local event = events[ievent] or {}
+		local event = ringbuffer.get(history, ievent) or {}
+		-- local event = events[ievent] or {}
 		local seq = seqs[#seqs + 1 - ievent]
 		if seq.key and seq.key ~= event.key then
 			return false
@@ -563,7 +563,7 @@ function M.get(index)
 end
 
 M.on_key_test = function(key)
-	on_key_event(key)
+	on_key_event(key, M.KEY_EVENT_SOURCE.ON_KEY)
 end
 
 function M.setup(opts)
